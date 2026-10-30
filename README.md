@@ -22,12 +22,12 @@ pnpm install
 cp .env.example .env
 # set a real secret (the API refuses the placeholder):
 sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 32)|" .env && rm .env.bak
-pnpm db:up        # postgres:17 on localhost:5433, creates demoledger + demoledger_test
+pnpm db:up        # postgres:17 on 127.0.0.1:5433 (loopback only), creates demoledger + demoledger_test
 pnpm db:reset     # drop schema, migrate, create roles, seed 100 transactions (anchored to today, UTC)
 pnpm dev          # API on http://localhost:3001, web on http://localhost:5173
 ```
 
-Open http://localhost:5173 and use **Sign in as Alpha ops** or **Sign in as Beta ops**.
+Open http://localhost:5173 and use **Sign in as Alpha ops** or **Sign in as Beta ops**. The **Transactions** screen has filters for wallet, status, direction and period, and pages through 10 rows at a time. The **Assistant** screen is the chat.
 
 With Cloudflare credentials in `.env` (see [Live smoke test](#live-smoke-test)), the assistant answers live. Without them, the transactions screen and the REST API work fully. The assistant runs the guard and then shows "The AI provider is not configured on this server", and that request is still audited.
 
@@ -44,12 +44,13 @@ Alpha has wallets `WALLET-A-001` (EUR), `-002` (EUR), `-003` (USD) and `-004` (G
 
 ## Example prompts
 
-The assistant's empty state offers these four, verbatim:
+The assistant's empty state offers these five. The first four are the assignment's examples, verbatim; the fifth demonstrates a visual answer:
 
 1. Why did wallet WALLET-A-001 have failed transactions?
 2. Show the largest completed outgoing transactions this week.
 3. How many failed transactions occurred yesterday?
 4. Summarize recent activity for WALLET-A-002.
+5. Show me a graph of outgoing transactions for the past week.
 
 More to try:
 - "How many completed transactions does WALLET-A-003 have in the last 30 days?"
@@ -104,6 +105,7 @@ Every variable lives in `.env.example`, with comments. The API validates them at
 | `GUARD_BASE_URL` | derived from `CF_ACCOUNT_ID` | Override for any System One endpoint. |
 | `GUARD_FAIL_MODE` | `open` | When Clef errors or times out and the heuristic finds nothing blocking: `open` proceeds, `closed` refuses. |
 | `GUARD_TIMEOUT_MS` | `2500` | Clef time budget. On a timeout or error the local heuristic still runs: a heuristic block still blocks, otherwise the verdict is `unavailable` and `GUARD_FAIL_MODE` decides (F-23). |
+| `TRUST_PROXY_HEADERS` | `false` | Set `true` only behind an ingress that overwrites `X-Forwarded-For`; otherwise login throttling uses the TCP peer address (OWASP-02). |
 | `ASK_RATE_LIMIT_PER_MINUTE` | `10` | Per-user `/api/ask` limit (in-memory). |
 | `SEED_ANCHOR` | empty (start of today, UTC) | ISO instant the seed is offset from; tests pin `2026-10-28T00:00:00Z`. |
 
@@ -292,7 +294,6 @@ The tenant comes only from the validated Better Auth session, and every request 
 
 - **Model evaluation depth:** each model has a single 14-question run. Live UI verification of the new default (Gemma) is in progress, and `@cf/qwen/qwen3.8-27b` was not evaluated.
 - **Live chart check and the eval cases q15–q18:** pending, because the free daily Neuron allowance ran out on 2026-10-30 (D-27). They run after the 00:00 UTC reset.
-- **Postgres row-level security** on `transactions` (stretch goal): not implemented. This is the next production step (`docs/ARCHITECTURE.md`, Tenant boundaries).
 - **Tool timeout:** there is no separate tool abort; `statement_timeout` (5 s) on the reader pool is the effective tool timeout.
 - **Production deployment** (single domain, secret manager, shared rate-limit store): described, not built.
 - **Optional demo video:** not recorded; the reproduction steps above replace it.

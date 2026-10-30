@@ -149,6 +149,16 @@ Its slower tail (p95 20 s) was accepted. In live UI verification, all four examp
   - `search_transactions.transaction_ids` lets a follow-up re-read exactly the cited rows. Live, the follow-up made one call with those two IDs and answered with the right wallets.
 - **Integration catch.** Four builders implemented D-24 in parallel, and the same filter ended up with two names: the shared `transaction_ids` and an internal `transactionIds`. The lead's gate failed on typecheck before the code ran. Had the mismatch reached runtime, the ID restriction would have been silently dropped, and a follow-up would have returned unrelated rows. After that, one name was used end to end (T-232).
 
+## External security review (OWASP_ANALYSIS.md)
+
+A second, independent AI tool reviewed the working tree against the OWASP Top 10:2025, the API Top 10 and the LLM Top 10, and changed no code.
+
+It found:
+- **an integration gap in work in progress:** the conversation RLS policies had landed before the code that sets `app.user_id`, so valid `/api/ask` requests failed closed with a 500 (OWASP-06);
+- **deployment-grade issues:** a Postgres port published on all interfaces with a default superuser password; trusting forwarding headers; secret rotation that does not revoke unsigned bearer tokens; no `no-store` caching header; unbounded auth bodies and pool waits.
+
+The agents' own gate and reviewer had not raised these. They mostly concern deployment rather than the tenant logic the tests target. This is useful cross-checking evidence: a reviewer with a different lens finds a different class of defect. Each finding has a disposition in `OWASP_RESPONSE.md`.
+
 ## How output was reviewed
 
 - **Requirement traceability:** each of R1–R39 maps to a file or a named test (`docs/REQUIREMENTS.md`). Every quoted test name was checked with grep before it was listed.

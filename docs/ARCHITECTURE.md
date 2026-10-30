@@ -62,14 +62,29 @@ The answer text still goes through every answer check. A mismatched request, suc
 - On session creation the user's membership becomes the active organization. `requireTenant` re-checks the `member` row on every request, so a session pointing at a foreign or deleted organization gets 403.
 - Better Auth's `/api/auth/organization/*` routes are not exposed (404). In Better Auth 1.7.14 a refused `set-active` to a foreign organization still clears the caller's own active organization (finding F-06), which locks the user out until they sign in again. Isolation is unaffected, but the endpoint is closed, and the web app shows a re-sign-in action on "No active organization".
 - CSRF: cookie-authenticated `POST /api/ask` requires an `Origin` in `BETTER_AUTH_TRUSTED_ORIGINS`; Better Auth enforces the same on its own routes. Bearer requests are exempt (`middleware/csrf.ts`).
-- Production: rotate `BETTER_AUTH_SECRET` (it invalidates sessions), use HTTPS so cookies get `Secure`, and add SSO/MFA before any real use. The API refuses to boot with the `.env.example` placeholder secret.
+- **Production:**
+  - Use HTTPS so cookies get `Secure`.
+  - Add SSO and MFA before any real use.
+  - Bearer tokens require a valid signature (`requireSignature`, OWASP-03).
+  - **Rotating `BETTER_AUTH_SECRET` alone does not revoke existing sessions.** To revoke cookie and bearer sessions, delete their `session` rows (see Incident response).
+  - The API refuses to boot with the `.env.example` placeholder secret.
+  - Login throttling ignores forwarding headers unless `TRUST_PROXY_HEADERS=true` (OWASP-02).
+  - **Set `NODE_ENV=production`** in deployments. Better Auth enables its login rate limiter only in production.
+  - **Bearer tokens must be the signed `set-auth-token` value.** Raw session tokens are rejected with 401 (`requireSignature`, OWASP-03).
+  - At boot, both pools must run as `ledger_reader` / `ledger_app`, with `rolsuper` and `rolbypassrls` false; otherwise the API refuses to start (F-30, T-270).
 
 ## Tenant boundaries (defense layers, strongest first)
 
 1. **The tenant comes only from the session.** `TransactionFilter` has no tenant field; REST query schemas are strict (`?tenant_id=` → 400); the tools get `tenantId` from the factory closure, and their strict arg schemas reject `tenant_id`.
 2. **One repository, tenant first.** `listTransactions(tenantId, …)` / `aggregateTransactions(tenantId, …)` always bind `tenant_id = $1`, including the follow-up filter `transaction_ids` (`transaction_id = ANY(…) AND tenant_id = $1`). Conversations are also keyed by tenant and user: a foreign `conversationId` is a 404. REST and AI tools share them, so there is one enforcement point.
 3. **Database roles.** `ledger_reader` can only SELECT `transactions`; `ledger_app` cannot touch `transactions` and can only INSERT audit rows. PUBLIC CONNECT/TEMP is revoked (ADR 0004).
-4. **Next production step: row-level security** (not implemented). Enable RLS on `transactions` with a policy on `current_setting('app.tenant_id')`, and have the repository set it per transaction with `set_config('app.tenant_id', $1, true)`. A query that forgot its WHERE clause would then return nothing instead of every tenant's rows.
+4. **Row-level security** (D-28, ADR 0010).
+   - `transactions` has `FORCE` RLS for `ledger_reader`, on `tenant_id = current_setting('app.tenant_id', true)`.
+   - `ai_conversations` and `ai_messages` have RLS for `ledger_app`, on tenant and user, with `WITH CHECK` on insert.
+   - The repository runs every query inside `withTenant`, which sets `app.tenant_id` with a transaction-local `set_config`. The conversation store also sets `app.user_id` (`withTenantUser`, T-252, OWASP-06).
+   - An unset context returns no rows (fail closed). A query that forgot its WHERE clause still sees only the caller's tenant.
+   - The application `tenant_id` filters stay, so there are two independent layers.
+   - Audit and Better Auth tables have no RLS (ADR 0010 gives the reasons).
 
 Tests: `apps/api/test/repo.transactions.test.ts` (repository), `apps/api/test/http.isolation.test.ts` (HTTP, cookie and bearer), `apps/api/src/orchestrator/db.test.ts` (AI tools against Postgres), `packages/db/src/roles.test.ts` (grants).
 
@@ -161,7 +176,7 @@ Tests: `apps/api/test/repo.transactions.test.ts` (repository), `apps/api/test/ht
 - **One domain:** the SPA as static files (CDN or the same host), with `/api/*` routed to the API, so cookies stay first-party and there is no CORS. Serve the CSP as an HTTP header in production as well as the meta tag.
 - **API:** one or more Node 24 instances behind TLS. Move the in-memory rate limiter to a shared store (Redis or Postgres) before running more than one instance.
 - **Secrets:** `BETTER_AUTH_SECRET`, `CF_API_TOKEN` (Workers AI Read only) and the role passwords go into the platform's secret manager, never into the image or repo. Use a separate token per environment.
-- **Database:** managed PostgreSQL 17. Run migrations as the owner role in a release step (`pnpm db:migrate`), then apply `roles.sql`; the app connects only as `ledger_reader` / `ledger_app`. Never run `db:reset` outside dev and test (it refuses other database names).
+- **Database:** managed PostgreSQL 17, on a private network with managed credentials. Locally, compose binds Postgres to `127.0.0.1:5433` only, because a port published on `0.0.0.0` is reachable from the LAN and can bypass the host firewall (OWASP-01). Run migrations as the owner role in a release step (`pnpm db:migrate`), then apply `roles.sql`; the app connects only as `ledger_reader` / `ledger_app`. Never run `db:reset` outside dev and test (it refuses other database names).
 - **Health:** `/api/health` reports DB connectivity and configured providers, with no secrets.
 
 ## Incident response
@@ -179,7 +194,7 @@ Tests: `apps/api/test/repo.transactions.test.ts` (repository), `apps/api/test/ht
   ```
 - **Rotate:**
   - `CF_API_TOKEN` in the Cloudflare dashboard;
-  - `BETTER_AUTH_SECRET`, which invalidates every session; also delete rows from `session` to revoke bearer tokens;
+  - **Revoke sessions by deleting `session` rows** (all of them, or a user's), which ends both cookie and bearer sessions. Rotating `BETTER_AUTH_SECRET` alone does not revoke tokens that are already issued (OWASP-03). Rotate it as well when the secret itself may be exposed;
   - the role passwords (re-run `roles.sql` with the new values).
 - Audit rows cannot be altered by the app role, so the trail survives a compromised API process.
 

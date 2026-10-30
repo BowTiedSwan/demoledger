@@ -64,7 +64,7 @@ Tests are listed by file; open them for case names.
 - `apps/api/src/audit/index.ts` — AuditRequestRecord (type), AuditToolCallRecord (type), AuditSink (interface), createDbAudit (function), createMemoryAudit (function)
 - `apps/api/src/auth/index.ts` — CreateAuthOptions (interface), createAuth (function)
 - `apps/api/src/conversations/db.test.ts` (test)
-- `apps/api/src/conversations/index.ts` — ConversationNotFoundError (class), ConversationScope (interface), HistoryPair (interface), ConversationStore (interface), clipAnswer (function), createDbConversations (function), createMemoryConversations (function)
+- `apps/api/src/conversations/index.ts` — ConversationNotFoundError (class), ConversationScope (interface), HistoryPair (interface), ConversationStore (interface), clipAnswer (function), withTenantUser (function), createDbConversations (function), createMemoryConversations (function)
 - `apps/api/src/guard/config.ts` — GUARD_THRESHOLDS (const), GuardThresholds (type), GUARD_MESSAGES (const)
 - `apps/api/src/guard/guard.test.ts` (test)
 - `apps/api/src/guard/heuristic.ts` — HeuristicCategory (type), HeuristicMatch (interface), scanQuestion (function), hasWriteVerb (function), heuristicVerdict (function), HeuristicGuard (class)
@@ -79,6 +79,8 @@ Tests are listed by file; open them for case names.
 - `apps/api/src/lib/errors.ts` — envelope (function), fail (function)
 - `apps/api/src/lib/lib.test.ts` (test)
 - `apps/api/src/lib/logger.ts` — createLogger (function)
+- `apps/api/src/lib/role-check.test.ts` (test)
+- `apps/api/src/lib/role-check.ts` — Queryable (interface), assertDbRoles (function)
 - `apps/api/src/lib/safe-int.ts` — toSafeNumber (function)
 - `apps/api/src/lib/validate.ts` — validate (function)
 - `apps/api/src/llm/errors.ts` — ClassifiedError (interface), classifyLlmError (function)
@@ -103,6 +105,7 @@ Tests are listed by file; open them for case names.
 - `apps/api/src/orchestrator/visual-flow.test.ts` (test)
 - `apps/api/src/orchestrator/workflow.test.ts` (test)
 - `apps/api/src/repo/transactions.ts` — ListPage (interface), listTransactions (function), aggregateTransactions (function)
+- `apps/api/src/repo/with-tenant.ts` — TenantTx (type), withTenant (function)
 - `apps/api/src/tools/index.ts` — SourceWriter (interface), LedgerToolsOptions (interface), ledgerTools (function), modelView (function), LedgerTools (type), REGISTERED_TOOL_NAMES (const), createRepoReader (re-export), LedgerReader (re-export), ToolCallRecorder (re-export), wrapPriorAnswer (re-export), wrapUntrusted (re-export)
 - `apps/api/src/tools/reader.ts` — LedgerReader (interface), createRepoReader (function)
 - `apps/api/src/tools/recorder.ts` — ToolCallRecorder (class)
@@ -110,6 +113,7 @@ Tests are listed by file; open them for case names.
 - `apps/api/src/tools/untrusted.ts` — wrapUntrusted (function), wrapPriorAnswer (function)
 - `apps/api/src/tools/visual.ts` — VisualSources (interface), VisualBuild (type), buildVisualSpec (function)
 - `apps/api/test/helpers.ts` — TEST_ANCHOR (const), TEST_NOW (const), ORIGIN (const), seed (const), noopGuard (const), makeContext (function), TestApp (type), Credentials (interface), cookieAuth (const), bearerAuth (const), signIn (function), sessionTokenOf (const)
+- `apps/api/test/http.hardening.test.ts` (test)
 - `apps/api/test/http.isolation.test.ts` (test)
 - `apps/api/test/http.misc.test.ts` (test)
 - `apps/api/test/repo.transactions.test.ts` (test)
@@ -223,6 +227,8 @@ Tests are listed by file; open them for case names.
 - `docs/DECISIONS.md`
 - `docs/DESIGN.md`
 - `docs/EVALS.md`
+- `docs/OWASP_ANALYSIS.md`
+- `docs/OWASP_RESPONSE.md`
 - `docs/PLAN.md`
 - `docs/README.md`
 - `docs/REQUIREMENTS.md`
@@ -236,6 +242,7 @@ Tests are listed by file; open them for case names.
 - `docs/adr/0007-workers-ai-free-plan-and-model.md`
 - `docs/adr/0008-server-stored-conversation-history.md`
 - `docs/adr/0009-generative-ui-with-server-bound-data.md`
+- `docs/adr/0010-row-level-security-second-tenant-boundary.md`
 - `docs/review-log.md`
 - `package.json`
 - `pnpm-workspace.yaml`

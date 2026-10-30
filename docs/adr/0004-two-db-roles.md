@@ -16,4 +16,4 @@ Each pool sets `statement_timeout` (`DB_STATEMENT_TIMEOUT_MS`, default 5 s).
 ## Consequences
 - An injected write through the tool path fails at the database (`packages/db/src/roles.test.ts` asserts the errors), and audit rows cannot be altered by the app.
 - Audit writers cannot use `INSERT … RETURNING`. Investigation queries run as the owner role.
-- Row-level security on `transactions` is **not** implemented. It is the next production step: set `app.tenant_id` per transaction with `set_config(…, true)` and add a policy, so a missing `WHERE tenant_id` would also fail closed.
+- Row-level security was added later as a second, independent layer: ADR 0010 (D-28), with `FORCE` RLS on `transactions` and the conversation tables, keyed on transaction-local `app.tenant_id` / `app.user_id`.
