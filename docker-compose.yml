@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demoledger_owner_dev_pw}
       POSTGRES_DB: demoledger
     ports:
-      - "5433:5432"
+      # Loopback only: the owner role is a superuser with a public dev default password (OWASP-01).
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
