@@ -11,9 +11,18 @@ All data is synthetic: 100 fictional transactions across two fictional tenants.
 
 ## Prerequisites
 
-- Node **24** (`.nvmrc`) and pnpm **10** (`corepack enable` or `npm i -g pnpm@10`).
-- Docker, for PostgreSQL. Host ports 5433 (Postgres), 3001 (API) and 5173 (web) must be free.
-- Optional: Cloudflare Workers AI credentials for live AI answers. The repo owner provides them (see [Setup](#setup)). Everything else, including every test, runs without them.
+Works on macOS and Linux; on Windows, use WSL2.
+
+| Tool | Version | Install | Check |
+|---|---|---|---|
+| Node.js | **24** (pinned in `.nvmrc`) | `nvm install && nvm use` in the repo, or `brew install node@24` | `node -v` → `v24.x` |
+| pnpm | **10** | `corepack enable` (ships with Node), or `npm i -g pnpm@10` | `pnpm -v` → `10.x` |
+| Docker | Docker Desktop, OrbStack or Docker Engine with Compose v2, **running** | docker.com or orbstack.dev | `docker compose version` and `docker info` both succeed |
+| git, openssl | any recent | preinstalled on macOS and most Linux distributions | `git --version`, `openssl version` |
+
+- Free host ports: **5433** (Postgres, bound to 127.0.0.1 only), **3001** (API) and **5173** (web).
+- **Cloudflare credentials are optional:** the repo owner provides them separately (see [Setup](#setup)). Without them, everything except live AI answers works, including every test.
+- No other services, accounts or paid APIs are needed. The database runs in Docker, and the 100 fictional transactions are seeded by `pnpm db:reset`; a readable copy is committed at [`packages/db/seed-data/transactions.csv`](packages/db/seed-data/transactions.csv).
 
 ## Setup
 
