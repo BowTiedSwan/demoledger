@@ -14,9 +14,12 @@ import {
   formatAxisValue,
   formatSeriesValue,
   groupSeriesByCurrency,
+  labelMaxChars,
   plotValue,
   type SeriesLike,
   seriesColor,
+  wrapLabel,
+  xAxisInterval,
 } from '@/lib/chart-format';
 
 type Row = Record<string, string | number | null>;
@@ -29,6 +32,34 @@ export interface ChartProps {
 }
 
 const AXIS = { fontSize: 12, fill: 'var(--chart-axis)' } as const;
+
+/** Category tick: wraps onto two lines, truncates with an ellipsis, keeps the full text in a <title>. */
+export function CategoryTick({
+  x = 0,
+  y = 0,
+  payload,
+  maxChars,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value?: unknown };
+  maxChars: number;
+}) {
+  const full = String(payload?.value ?? '');
+  const lines = wrapLabel(full, maxChars);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <title>{full}</title>
+      <text textAnchor="middle" fill="var(--chart-axis)" fontSize={12}>
+        {lines.map((line) => (
+          <tspan key={line} x={0} dy={14}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+}
 
 function TooltipBody({
   active,
@@ -82,7 +113,21 @@ function Panel({
   const axes = (
     <>
       <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
-      <XAxis dataKey={props.xKey} tick={AXIS} tickLine={false} axisLine={false} />
+      <XAxis
+        dataKey={props.xKey}
+        tick={(t) => (
+          <CategoryTick
+            x={Number(t.x)}
+            y={Number(t.y)}
+            payload={t.payload}
+            maxChars={labelMaxChars(data.length)}
+          />
+        )}
+        interval={xAxisInterval(data.length)}
+        height={44}
+        tickLine={false}
+        axisLine={false}
+      />
       <YAxis
         tick={AXIS}
         tickLine={false}

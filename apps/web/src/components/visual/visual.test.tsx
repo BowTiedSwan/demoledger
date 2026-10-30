@@ -2,6 +2,7 @@ import type { VisualSpec } from '@demoledger/shared';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { formatAxisValue, formatSeriesValue, groupSeriesByCurrency, plotValue } from '@/lib/chart-format';
+import { wrapClass } from './registry';
 import { VisualBlock } from './visual-block';
 
 const specOf = (element: VisualSpec['elements'][string]): { id: string; spec: VisualSpec } => ({
@@ -98,6 +99,43 @@ describe('catalog rendering', () => {
     expect(out).toContain('—');
     expect(out).toContain('Not recorded');
     expect(out).not.toContain('No data');
+  });
+
+  it('keeps IDs, wallets, dates and amounts on one line; only description and reason columns may wrap', () => {
+    const out = html(
+      specOf({
+        type: 'Table',
+        props: {
+          title: 'Recent',
+          columns: [
+            { key: 'transaction_id', label: 'Transaction' },
+            { key: 'wallet_id', label: 'Wallet' },
+            { key: 'occurred_at', label: 'Date' },
+            { key: 'amount', label: 'Amount', align: 'right' },
+            { key: 'failure_reason', label: 'Failure reason' },
+            { key: 'description', label: 'Description' },
+          ],
+          rows: [
+            {
+              transaction_id: 'TXN-A-0055',
+              wallet_id: 'WALLET-A-003',
+              occurred_at: '2026-10-29',
+              amount: '$455.00',
+              failure_reason: 'Card declined',
+              description: 'Supplier payout',
+            },
+          ],
+        },
+      }),
+    );
+    expect(wrapClass('transaction_id')).toBe('whitespace-nowrap');
+    expect(wrapClass('wallet_id')).toBe('whitespace-nowrap');
+    expect(wrapClass('amount')).toBe('whitespace-nowrap');
+    expect(wrapClass('description')).toContain('whitespace-normal');
+    expect(wrapClass('failure_reason')).toContain('whitespace-normal');
+    expect(out.match(/whitespace-nowrap/g)?.length).toBeGreaterThanOrEqual(8); // 4 headers + 4 cells
+    expect(out).toContain('scroll-edges');
+    expect(out).toContain('tabular-nums');
   });
 
   it('renders a stat', () => {

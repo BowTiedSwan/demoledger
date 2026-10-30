@@ -60,3 +60,43 @@ export const SERIES_COLORS = [
 export function seriesColor(i: number): string {
   return SERIES_COLORS[i % SERIES_COLORS.length] ?? SERIES_COLORS[0];
 }
+
+/** Categories at or below this count always show every label; beyond it the axis may skip (e.g. many dates). */
+export const MAX_ALL_LABELS = 12;
+
+/** `0` = never drop a tick label; `'preserveStartEnd'` lets recharts thin out dense axes. */
+export function xAxisInterval(categoryCount: number): 0 | 'preserveStartEnd' {
+  return categoryCount <= MAX_ALL_LABELS ? 0 : 'preserveStartEnd';
+}
+
+/** Characters per tick line, from how many categories share the width. */
+export function labelMaxChars(categoryCount: number): number {
+  if (categoryCount <= 4) return 22;
+  if (categoryCount <= 6) return 16;
+  if (categoryCount <= 8) return 12;
+  return 9;
+}
+
+/**
+ * Split a category label into at most two lines on spaces; anything that still does not fit is
+ * truncated with an ellipsis. The full text stays in the tooltip, the tick `<title>` and the data table.
+ */
+export function wrapLabel(label: string, maxChars: number): string[] {
+  const words = label.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [''];
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxChars || current === '') current = next;
+    else {
+      lines.push(current);
+      current = word;
+    }
+  }
+  lines.push(current);
+  const clip = (s: string) => (s.length > maxChars ? `${s.slice(0, Math.max(1, maxChars - 1))}…` : s);
+  if (lines.length <= 2) return lines.map(clip);
+  const rest = lines.slice(1).join(' ');
+  return [clip(lines[0] as string), clip(rest)];
+}

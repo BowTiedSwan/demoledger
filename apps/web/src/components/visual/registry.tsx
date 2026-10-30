@@ -4,6 +4,12 @@ import { formatSeriesValue } from '@/lib/chart-format';
 import { catalog } from './catalog';
 import { ChartFigure } from './charts';
 
+/** Only free-text columns may wrap; IDs, wallets, dates, amounts and statuses stay on one line. */
+const WRAPPING_COLUMN = /description|reason|note|memo|counterparty/i;
+export function wrapClass(key: string): string {
+  return WRAPPING_COLUMN.test(key) ? 'min-w-48 whitespace-normal' : 'whitespace-nowrap';
+}
+
 const ALIGN = { left: 'text-left', right: 'text-right', center: 'text-center' } as const;
 
 export const { registry } = defineRegistry(catalog, {
@@ -18,14 +24,18 @@ export const { registry } = defineRegistry(catalog, {
       </div>
     ),
     Table: ({ props }) => (
-      <figure className="flex w-full flex-col gap-2">
+      <figure className="flex w-full min-w-0 flex-col gap-2">
         <figcaption className="text-base">{props.title}</figcaption>
-        <div className="overflow-x-auto rounded-2xl border border-border">
-          <table className="w-full text-sm">
+        <div className="scroll-edges max-w-full overflow-x-auto rounded-2xl border border-border">
+          <table className="w-max min-w-full text-sm">
             <thead>
               <tr className="bg-muted text-muted-foreground">
                 {props.columns.map((c) => (
-                  <th key={c.key} scope="col" className={`px-3 py-2 ${ALIGN[c.align ?? 'left']}`}>
+                  <th
+                    key={c.key}
+                    scope="col"
+                    className={`px-3 py-2 ${wrapClass(c.key)} ${ALIGN[c.align ?? 'left']}`}
+                  >
                     {c.label}
                   </th>
                 ))}
@@ -36,7 +46,10 @@ export const { registry } = defineRegistry(catalog, {
                 // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id
                 <tr key={i} className="border-t border-border">
                   {props.columns.map((c) => (
-                    <td key={c.key} className={`px-3 py-2 ${ALIGN[c.align ?? 'left']}`}>
+                    <td
+                      key={c.key}
+                      className={`px-3 py-2 tabular-nums ${wrapClass(c.key)} ${ALIGN[c.align ?? 'left']}`}
+                    >
                       {row[c.key] === null || row[c.key] === undefined || row[c.key] === '' ? (
                         <span role="img" aria-label="Not applicable">
                           —
