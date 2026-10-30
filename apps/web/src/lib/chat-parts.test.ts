@@ -4,6 +4,9 @@ import {
   hasVisibleContent,
   isWaitingForFirstToken,
   messageNotices,
+  PENDING_ANALYSING,
+  PENDING_THINKING,
+  pendingStepLabel,
   runningToolLabel,
   SUGGESTED_QUESTIONS,
   sourceLinks,
@@ -182,5 +185,41 @@ describe('summarizeToolOutput', () => {
       'The lookup was rejected: limit too big',
     );
     expect(summarizeToolOutput('x')).toBeNull();
+  });
+});
+
+describe('pendingStepLabel (continuous progress, T-295)', () => {
+  const msg = (...parts: { type: string; text?: string; state?: string }[]) => ({ role: 'assistant', parts });
+  const done = { type: 'tool-search_transactions', state: 'output-available' };
+
+  it('says Thinking before anything has streamed, including right after submit', () => {
+    expect(pendingStepLabel('submitted', undefined)).toBe(PENDING_THINKING);
+    expect(pendingStepLabel('streaming', { role: 'user', parts: [] })).toBe(PENDING_THINKING);
+    expect(pendingStepLabel('streaming', msg({ type: 'step-start' }))).toBe(PENDING_THINKING);
+  });
+
+  it('shows after a completed tool part while streaming (the gap that used to look stalled)', () => {
+    expect(pendingStepLabel('streaming', msg({ type: 'step-start' }, done))).toBe(PENDING_ANALYSING);
+    expect(pendingStepLabel('streaming', msg(done, { type: 'step-start' }))).toBe(PENDING_ANALYSING);
+    expect(pendingStepLabel('streaming', msg(done, { type: 'data-visual' }))).toBe(PENDING_ANALYSING);
+  });
+
+  it('is gone once text streams, while a tool is running, and when the stream ends or errors', () => {
+    expect(pendingStepLabel('streaming', msg(done, { type: 'text', text: 'The' }))).toBeNull();
+    expect(
+      pendingStepLabel(
+        'streaming',
+        msg(done, { type: 'tool-aggregate_transactions', state: 'input-available' }),
+      ),
+    ).toBeNull();
+    expect(
+      pendingStepLabel('streaming', msg({ type: 'tool-search_transactions', state: 'input-streaming' })),
+    ).toBeNull();
+    expect(pendingStepLabel('ready', msg(done))).toBeNull();
+    expect(pendingStepLabel('error', msg(done))).toBeNull();
+  });
+
+  it('ignores empty text parts', () => {
+    expect(pendingStepLabel('streaming', msg(done, { type: 'text', text: '' }))).toBe(PENDING_ANALYSING);
   });
 });

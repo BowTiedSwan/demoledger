@@ -3,7 +3,7 @@ import { CircleAlertIcon, ShieldAlertIcon, TriangleAlertIcon } from 'lucide-reac
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { Sources } from '@/components/ai-elements/sources';
-import { Tool, type ToolState } from '@/components/ai-elements/tool';
+import { PendingStep, Tool, type ToolState } from '@/components/ai-elements/tool';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ export function ErrorBanner({
   signInLink?: boolean;
 }) {
   return (
-    <Alert variant="destructive" role="alert" className="w-full">
+    <Alert variant="destructive" role="alert" className="callout-soft w-full">
       <CircleAlertIcon aria-hidden />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
@@ -64,10 +64,13 @@ export function ChatMessageView({
   message,
   streaming,
   onRetry,
+  pendingLabel = null,
 }: {
   message: ChatMessage;
   streaming: boolean;
   onRetry: () => void;
+  /** Shown as the last step row while the model is between steps (see pendingStepLabel). */
+  pendingLabel?: string | null;
 }) {
   if (message.role === 'user') {
     const text = message.parts.map((p) => (p.type === 'text' ? p.text : '')).join('');
@@ -156,6 +159,8 @@ export function ChatMessageView({
             onRetry={notices.error.retryable ? onRetry : undefined}
           />
         ) : null}
+
+        {pendingLabel ? <PendingStep label={pendingLabel} /> : null}
 
         <Sources ids={sources.map((s) => s.id)} />
       </MessageContent>

@@ -171,3 +171,25 @@ export function summarizeToolOutput(output: unknown): string | null {
   }
   return null;
 }
+
+export const PENDING_THINKING = 'Thinking…';
+export const PENDING_ANALYSING = 'Analysing the results…';
+
+/**
+ * Continuous-progress row (T-295). While a request is in flight and the in-progress assistant message
+ * is NOT currently streaming text or running a tool, something must still show: "Thinking…" before any
+ * tool has run, "Analysing the results…" after a finished tool or visual. Null when text is streaming,
+ * a tool is running (its own row shows the spinner), or the request is not in flight.
+ */
+export function pendingStepLabel(status: ChatStatus, last: MessageLike | undefined): string | null {
+  if (status !== 'submitted' && status !== 'streaming') return null;
+  if (last?.role !== 'assistant') return PENDING_THINKING;
+  const meaningful = last.parts.filter(
+    (p) => p.type !== 'step-start' && !(p.type === 'text' && !(p.text ?? '').trim()),
+  );
+  const tail = meaningful.at(-1);
+  if (!tail) return PENDING_THINKING;
+  if (tail.type === 'text') return null;
+  if (toolNameOfPart(tail) && !isToolFinished(tail.state)) return null;
+  return PENDING_ANALYSING;
+}

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { summarizeToolOutput } from '@/lib/chat-parts';
 import { cn } from '@/lib/utils';
+import { Shimmer } from './shimmer';
 
 export type ToolState =
   | 'input-streaming'
@@ -16,6 +17,10 @@ export type ToolState =
 function isRejected(output: unknown): boolean {
   return typeof output === 'object' && output !== null && (output as { ok?: unknown }).ok === false;
 }
+
+/** Shared by tool rows and the pending row, so swapping one for the other never shifts the layout. */
+export const STEP_ROW_CLASS =
+  '-mx-2 flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-muted-foreground';
 
 /** State is shown as an icon plus text (never colour alone). */
 function stateIcon(state: ToolState, rejected: boolean): { icon: ReactNode; label: string } {
@@ -46,14 +51,16 @@ export function Tool({
 }) {
   const rejected = state === 'output-available' && isRejected(output);
   const { icon, label } = stateIcon(state, rejected);
+  const running = !(state === 'output-available' || state === 'output-error' || state === 'output-denied');
   const summary = state === 'output-available' ? summarizeToolOutput(output) : null;
   return (
     <Collapsible className="w-full">
-      <CollapsibleTrigger className="group -mx-2 flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+      <CollapsibleTrigger className={cn(STEP_ROW_CLASS, 'group hover:bg-muted hover:text-foreground')}>
         {icon}
         <span className="sr-only">{label}: </span>
         <span className="min-w-0 truncate">
           {title}
+          {running ? '…' : null}
           {summary ? <span className={cn(rejected && 'text-destructive')}> · {summary}</span> : null}
         </span>
         <ChevronRightIcon
@@ -79,6 +86,16 @@ function ToolSection({ label, value }: { label: string; value: unknown }) {
       <pre className="max-h-64 overflow-auto rounded-xl bg-muted p-3 text-[13px]">
         <code>{JSON.stringify(value, null, 2)}</code>
       </pre>
+    </div>
+  );
+}
+
+/** Pending step: same row as a tool row, spinner plus shimmer, no expand. Static under reduced motion. */
+export function PendingStep({ label }: { label: string }) {
+  return (
+    <div className={STEP_ROW_CLASS} data-testid="pending-step">
+      <LoaderCircleIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+      <Shimmer>{label}</Shimmer>
     </div>
   );
 }
