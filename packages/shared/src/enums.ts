@@ -22,7 +22,15 @@ export const PERIODS = ['today', 'yesterday', 'this_week', 'last_7_days', 'last_
 export const period = z.enum(PERIODS);
 export type Period = z.infer<typeof period>;
 
-export const GROUP_BYS = ['none', 'status', 'wallet', 'direction', 'currency', 'day'] as const;
+export const GROUP_BYS = [
+  'none',
+  'status',
+  'wallet',
+  'direction',
+  'currency',
+  'day',
+  'failure_reason',
+] as const;
 export const groupBy = z.enum(GROUP_BYS);
 export type GroupBy = z.infer<typeof groupBy>;
 

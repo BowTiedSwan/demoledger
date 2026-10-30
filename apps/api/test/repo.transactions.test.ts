@@ -1,5 +1,5 @@
 import { createDb, createPool, type Database } from '@demoledger/db';
-import { formatMinorUnits, type TransactionFilter } from '@demoledger/shared';
+import { formatMinorUnits, type GroupBy, type TransactionFilter } from '@demoledger/shared';
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { aggregateTransactions, listTransactions } from '../src/repo/transactions';
@@ -27,13 +27,8 @@ afterAll(async () => {
 
 const list = (t: string, f: TransactionFilter = {}, page = {}, now = TEST_NOW) =>
   listTransactions(t, f, { limit: 50, ...page }, now, reader);
-const agg = (
-  t: string,
-  f: TransactionFilter,
-  metric: 'count' | 'sum',
-  groupBy: 'none' | 'status' | 'wallet' | 'direction' | 'currency' | 'day',
-  now = TEST_NOW,
-) => aggregateTransactions(t, f, metric, groupBy, now, reader);
+const agg = (t: string, f: TransactionFilter, metric: 'count' | 'sum', groupBy: GroupBy, now = TEST_NOW) =>
+  aggregateTransactions(t, f, metric, groupBy, now, reader);
 
 describe('seed sanity (generator vs database)', () => {
   it('the test database holds exactly the generated rows', async () => {
@@ -495,5 +490,49 @@ describe('row-level security backstop (withTenant)', () => {
 
   it('a hostile tenant value is only a parameter', async () => {
     expect(await withTenant(reader, "tenant_alpha' OR '1'='1", countAll)).toBe(0);
+  });
+});
+
+describe('group_by failure_reason (chart of failures by cause)', () => {
+  const expectedCounts = (tenant: string) => {
+    const from = utc(2026, 10, 28) - 29 * 86_400_000;
+    const to = utc(2026, 10, 29);
+    const m = new Map<string, number>();
+    for (const r of forTenant(tenant)) {
+      if (r.status !== 'failed' || r.occurredAt.getTime() < from || r.occurredAt.getTime() >= to) continue;
+      const k = r.failureReason ?? 'not_recorded';
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  };
+
+  it('counts failed last_30_days by reason, including the not_recorded bucket', async () => {
+    for (const tenant of [ALPHA, BETA]) {
+      const exp = expectedCounts(tenant);
+      const r = await agg(tenant, { status: 'failed', period: 'last_30_days' }, 'count', 'failure_reason');
+      expect(Object.fromEntries(r.groups.map((g) => [g.key, g.count]))).toEqual(Object.fromEntries(exp));
+      expect(r.total_matching).toBe([...exp.values()].reduce((a, b) => a + b, 0));
+      expect(r.groups.map((g) => g.key)).toEqual([...r.groups.map((g) => g.key)].sort());
+    }
+    expect(expectedCounts(ALPHA).has('not_recorded')).toBe(true);
+  });
+
+  it('is tenant-scoped: a tenant only sees its own reasons and counts', async () => {
+    const a = await agg(ALPHA, { status: 'failed' }, 'count', 'failure_reason');
+    const b = await agg(BETA, { status: 'failed' }, 'count', 'failure_reason');
+    expect(a.total_matching).toBe(forTenant(ALPHA).filter((r) => r.status === 'failed').length);
+    expect(b.total_matching).toBe(forTenant(BETA).filter((r) => r.status === 'failed').length);
+  });
+
+  it('sum is split per currency within each reason', async () => {
+    const r = await agg(ALPHA, { status: 'failed' }, 'sum', 'failure_reason');
+    const exp = new Map<string, bigint>();
+    for (const x of forTenant(ALPHA).filter((t) => t.status === 'failed')) {
+      const k = `${x.failureReason ?? 'not_recorded'}|${x.currency}`;
+      exp.set(k, (exp.get(k) ?? 0n) + BigInt(x.amountMinor));
+    }
+    expect(Object.fromEntries(r.groups.map((g) => [`${g.key}|${g.currency}`, g.sum_minor]))).toEqual(
+      Object.fromEntries([...exp].map(([k, v]) => [k, String(v)])),
+    );
   });
 });

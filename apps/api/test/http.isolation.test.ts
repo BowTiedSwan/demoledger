@@ -111,6 +111,20 @@ describe.each(modes)('HTTP tenant isolation via %s', (_name, authInit) => {
     expect(cross.total_matching).toBe(0);
   });
 
+  it('REST aggregate group_by=failure_reason is scoped to the caller', async () => {
+    const res = await get(
+      '/api/transactions/aggregate?metric=count&group_by=failure_reason&status=failed',
+      authInit(alpha),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as AggregateResponse;
+    expect(body.group_by).toBe('failure_reason');
+    expect(body.total_matching).toBe(
+      all.filter((r) => r.tenantId === 'tenant_alpha' && r.status === 'failed').length,
+    );
+    expect(body.groups.some((g) => g.key === 'not_recorded')).toBe(true);
+  });
+
   it.each([
     '/api/transactions?tenant_id=tenant_beta',
     '/api/transactions?tenantId=tenant_beta',

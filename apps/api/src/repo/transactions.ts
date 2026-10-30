@@ -159,6 +159,8 @@ const GROUP_KEY: Record<GroupBy, SQL> = {
   wallet: sql`wallet_id`,
   direction: sql`direction::text`,
   currency: sql`currency::text`,
+  // Rows without a recorded reason (and non-failed rows) bucket under the key `not_recorded`.
+  failure_reason: sql`COALESCE(failure_reason, 'not_recorded')`,
   day: sql`to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
 };
 

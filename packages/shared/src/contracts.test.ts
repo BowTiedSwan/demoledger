@@ -3,6 +3,7 @@ import {
   ASK_HISTORY_ANSWER_MAX_CHARS,
   ASK_HISTORY_MAX_PAIRS,
   aggregateTransactionsArgs,
+  aggregateTransactionsQuery,
   askRequest,
   extractTransactionIds,
   formatMinorUnits,
@@ -59,6 +60,16 @@ describe('searchTransactionsArgs', () => {
 });
 
 describe('aggregateTransactionsArgs', () => {
+  it('accepts group_by=failure_reason (key "not_recorded" for null reasons)', () => {
+    expect(aggregateTransactionsQuery.parse({ metric: 'count', group_by: 'failure_reason' }).group_by).toBe(
+      'failure_reason',
+    );
+    expect(
+      aggregateTransactionsArgs.parse({ metric: 'count', group_by: 'failure_reason', status: 'failed' })
+        .group_by,
+    ).toBe('failure_reason');
+  });
+
   it('requires metric and defaults group_by', () => {
     expect(aggregateTransactionsArgs.safeParse({}).success).toBe(false);
     expect(aggregateTransactionsArgs.parse({ metric: 'count' })).toEqual({
