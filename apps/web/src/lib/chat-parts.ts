@@ -12,12 +12,13 @@ export interface MessageLike {
   parts: readonly { type: string; text?: string; state?: string }[];
 }
 
-/** The suggested questions, verbatim from the brief. */
+/** The suggested questions: the four from the brief verbatim and first, then the chart prompt. */
 export const SUGGESTED_QUESTIONS = [
   'Why did wallet WALLET-A-001 have failed transactions?',
   'Show the largest completed outgoing transactions this week.',
   'How many failed transactions occurred yesterday?',
   'Summarize recent activity for WALLET-A-002.',
+  'Show me a graph of outgoing transactions for the past week.',
 ] as const;
 
 /** Friendly tool titles: running (progressive) and finished. */

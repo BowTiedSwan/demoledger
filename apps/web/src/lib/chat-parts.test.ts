@@ -21,6 +21,7 @@ describe('suggested questions', () => {
       'Show the largest completed outgoing transactions this week.',
       'How many failed transactions occurred yesterday?',
       'Summarize recent activity for WALLET-A-002.',
+      'Show me a graph of outgoing transactions for the past week.',
     ]);
   });
 });

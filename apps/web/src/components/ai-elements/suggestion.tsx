@@ -3,7 +3,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function Suggestions({ className, ...props }: ComponentProps<'ul'>) {
-  return <ul className={cn('grid gap-2 sm:grid-cols-2', className)} {...props} />;
+  return (
+    <ul
+      className={cn('grid gap-2 sm:grid-cols-2 sm:[&>li:last-child:nth-child(odd)]:col-span-2', className)}
+      {...props}
+    />
+  );
 }
 
 export function Suggestion({
