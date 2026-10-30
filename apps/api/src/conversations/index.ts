@@ -1,6 +1,6 @@
 import { type Database, schema } from '@demoledger/db';
 import { ASK_HISTORY_ANSWER_MAX_CHARS, ASK_HISTORY_MAX_PAIRS } from '@demoledger/shared';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 
 /**
  * Server-stored conversation history (D-24). The model never sees client-supplied history: it
@@ -45,57 +45,89 @@ export function clipAnswer(text: string, max = ASK_HISTORY_ANSWER_MAX_CHARS): st
   return text.length <= max ? text : `${text.slice(0, max)} [...]`;
 }
 
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/**
+ * Run `fn` in a transaction on the app pool whose first statement sets the row-level-security
+ * context for ai_conversations / ai_messages (forced RLS requires BOTH settings):
+ * `SELECT set_config('app.tenant_id', $t, true), set_config('app.user_id', $u, true)`.
+ * Parameterised and transaction-local (`true`), so it cannot leak to the next user of a pooled
+ * connection. The explicit tenant/user filters below stay: RLS is a second, independent layer.
+ */
+export async function withTenantUser<T>(
+  db: Database,
+  who: { tenantId: string; userId: string },
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT set_config('app.tenant_id', ${who.tenantId}, true), set_config('app.user_id', ${who.userId}, true)`,
+    );
+    return fn(tx);
+  });
+}
+
 export function createDbConversations(db: Database): ConversationStore {
   return {
-    async ensure({ conversationId, tenantId, userId }) {
-      await db
-        .insert(schema.aiConversations)
-        .values({ id: conversationId, tenantId, userId })
-        .onConflictDoNothing();
-      const [row] = await db
-        .select({ tenantId: schema.aiConversations.tenantId, userId: schema.aiConversations.userId })
-        .from(schema.aiConversations)
-        .where(eq(schema.aiConversations.id, conversationId))
-        .limit(1);
-      if (!row || row.tenantId !== tenantId || row.userId !== userId) throw new ConversationNotFoundError();
-    },
+    ensure: ({ conversationId, tenantId, userId }) =>
+      withTenantUser(db, { tenantId, userId }, async (tx) => {
+        await tx
+          .insert(schema.aiConversations)
+          .values({ id: conversationId, tenantId, userId })
+          .onConflictDoNothing();
+        const [row] = await tx
+          .select({ id: schema.aiConversations.id })
+          .from(schema.aiConversations)
+          .where(
+            and(
+              eq(schema.aiConversations.id, conversationId),
+              eq(schema.aiConversations.tenantId, tenantId),
+              eq(schema.aiConversations.userId, userId),
+            ),
+          )
+          .limit(1);
+        // Under RLS another owner's row is invisible, so "not mine" and "unknown" look the same.
+        if (!row) throw new ConversationNotFoundError();
+      }),
 
-    async loadHistory({ conversationId, tenantId, userId }) {
-      const m = schema.aiMessages;
-      // Both rows of a turn are written together; fetch twice the pair cap and re-pair by request.
-      const rows = await db
-        .select({ role: m.role, content: m.content, requestId: m.requestId, createdAt: m.createdAt })
-        .from(m)
-        .where(and(eq(m.conversationId, conversationId), eq(m.tenantId, tenantId), eq(m.userId, userId)))
-        .orderBy(desc(m.createdAt))
-        .limit(ASK_HISTORY_MAX_PAIRS * 2);
-      return pairUp(rows.reverse());
-    },
+    loadHistory: ({ conversationId, tenantId, userId }) =>
+      withTenantUser(db, { tenantId, userId }, async (tx) => {
+        const m = schema.aiMessages;
+        // Both rows of a turn are written together; fetch twice the pair cap and re-pair by request.
+        const rows = await tx
+          .select({ role: m.role, content: m.content, requestId: m.requestId, createdAt: m.createdAt })
+          .from(m)
+          .where(and(eq(m.conversationId, conversationId), eq(m.tenantId, tenantId), eq(m.userId, userId)))
+          .orderBy(desc(m.createdAt))
+          .limit(ASK_HISTORY_MAX_PAIRS * 2);
+        return pairUp(rows.reverse());
+      }),
 
-    async appendTurn({ conversationId, tenantId, userId }, { requestId, question, answer }) {
-      const now = Date.now();
-      await db.insert(schema.aiMessages).values([
-        {
-          conversationId,
-          tenantId,
-          userId,
-          role: 'user',
-          content: question,
-          requestId,
-          createdAt: new Date(now),
-        },
-        // +1 ms: a deterministic order inside the turn.
-        {
-          conversationId,
-          tenantId,
-          userId,
-          role: 'assistant',
-          content: answer,
-          requestId,
-          createdAt: new Date(now + 1),
-        },
-      ]);
-    },
+    appendTurn: ({ conversationId, tenantId, userId }, { requestId, question, answer }) =>
+      withTenantUser(db, { tenantId, userId }, async (tx) => {
+        const now = Date.now();
+        await tx.insert(schema.aiMessages).values([
+          {
+            conversationId,
+            tenantId,
+            userId,
+            role: 'user',
+            content: question,
+            requestId,
+            createdAt: new Date(now),
+          },
+          // +1 ms: a deterministic order inside the turn.
+          {
+            conversationId,
+            tenantId,
+            userId,
+            role: 'assistant',
+            content: answer,
+            requestId,
+            createdAt: new Date(now + 1),
+          },
+        ]);
+      }),
   };
 }
 

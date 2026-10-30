@@ -1,7 +1,9 @@
 import { createDb, createPool, type Database } from '@demoledger/db';
 import { formatMinorUnits, type TransactionFilter } from '@demoledger/shared';
+import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { aggregateTransactions, listTransactions } from '../src/repo/transactions';
+import { withTenant } from '../src/repo/with-tenant';
 import { seed, TEST_NOW } from './helpers';
 
 const ALPHA = 'tenant_alpha';
@@ -467,5 +469,31 @@ describe('transactionIds filter (ANY, tenant-scoped)', () => {
       0,
     );
     expect((await list(ALPHA, {})).total_matching).toBe(forTenant(ALPHA).length);
+  });
+});
+
+describe('row-level security backstop (withTenant)', () => {
+  const countAll = (tx: { execute: (q: ReturnType<typeof sql>) => Promise<{ rows: { n: string }[] }> }) =>
+    tx.execute(sql`SELECT count(*)::text AS n FROM transactions`).then((r) => Number(r.rows[0]?.n));
+
+  it('a deliberately unscoped query inside withTenant sees only the current tenant', async () => {
+    expect(await withTenant(reader, ALPHA, countAll)).toBe(forTenant(ALPHA).length);
+    expect(await withTenant(reader, BETA, countAll)).toBe(forTenant(BETA).length);
+    expect(await withTenant(reader, 'tenant_gamma', countAll)).toBe(0);
+  });
+
+  it('the same unscoped query outside the helper returns 0 (policy fails closed)', async () => {
+    const r = await pool.query('SELECT count(*)::int AS n FROM transactions');
+    expect(r.rows[0].n).toBe(0);
+  });
+
+  it('the tenant setting is transaction-local and does not leak to the pooled connection', async () => {
+    await withTenant(reader, ALPHA, countAll);
+    const r = await pool.query("SELECT current_setting('app.tenant_id', true) AS t");
+    expect(r.rows[0].t === null || r.rows[0].t === '').toBe(true);
+  });
+
+  it('a hostile tenant value is only a parameter', async () => {
+    expect(await withTenant(reader, "tenant_alpha' OR '1'='1", countAll)).toBe(0);
   });
 });

@@ -129,7 +129,12 @@ export async function handleAsk(args: HandleAskArgs): Promise<Response> {
         },
         [],
       )
-      .catch(() => {});
+      .catch((err: unknown) => {
+        args.deps.logger.error(
+          { requestId: args.requestId, err: err instanceof Error ? err.message : String(err) },
+          'audit write failed (conversation not found)',
+        );
+      });
     return Response.json(
       { error: { code: 'not_found', message: 'Conversation not found.', requestId: args.requestId } },
       { status: 404, headers: { [REQUEST_ID_HEADER]: args.requestId } },

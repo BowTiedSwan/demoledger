@@ -32,6 +32,7 @@ import {
 } from '@demoledger/shared';
 import { type SQL, sql } from 'drizzle-orm';
 import { toSafeNumber } from '../lib/safe-int';
+import { withTenant } from './with-tenant';
 
 export interface ListPage {
   limit?: number;
@@ -128,16 +129,16 @@ export async function listTransactions(
   const range = toRange(filter, now);
   const where = whereClause(tenantId, filter, range);
 
-  const [rows, count] = await Promise.all([
-    db.execute<TxRow>(sql`
+  const { rows, count } = await withTenant(db, tenantId, async (tx) => ({
+    rows: await tx.execute<TxRow>(sql`
       SELECT transaction_id, wallet_id, amount_minor::text AS amount_minor, currency, direction,
              status, failure_reason, occurred_at, description
       FROM transactions
       WHERE ${where}
       ORDER BY ${ORDER_BY[page.sort ?? 'occurred_at_desc']}
       LIMIT ${limit} OFFSET ${offset}`),
-    db.execute<{ n: string }>(sql`SELECT count(*)::text AS n FROM transactions WHERE ${where}`),
-  ]);
+    count: await tx.execute<{ n: string }>(sql`SELECT count(*)::text AS n FROM transactions WHERE ${where}`),
+  }));
 
   const items = rows.rows.map(toDto);
   const total = toSafeNumber(count.rows[0]?.n ?? '0', 'count');
@@ -184,16 +185,17 @@ export async function aggregateTransactions(
   const where = whereClause(tenantId, filter, range);
   const key = GROUP_KEY[groupBy];
 
-  const res =
+  const res = await withTenant(db, tenantId, (tx) =>
     metric === 'count'
-      ? await db.execute<AggRow>(sql`
+      ? tx.execute<AggRow>(sql`
           SELECT ${key} AS key, count(*)::text AS n
           FROM transactions WHERE ${where}
           GROUP BY 1 ORDER BY 1`)
-      : await db.execute<AggRow>(sql`
+      : tx.execute<AggRow>(sql`
           SELECT ${key} AS key, currency::text AS currency, count(*)::text AS n, sum(amount_minor)::text AS sum_minor
           FROM transactions WHERE ${where}
-          GROUP BY 1, 2 ORDER BY 1, 2`);
+          GROUP BY 1, 2 ORDER BY 1, 2`),
+  );
 
   const groups: AggregateGroup[] = res.rows.map((r) => {
     const count = toSafeNumber(r.n, 'count');
