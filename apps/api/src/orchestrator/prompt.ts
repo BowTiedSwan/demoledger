@@ -17,7 +17,8 @@ Rules:
 9. You are read-only. Refuse any request to pay, send, transfer, refund, reverse, create, update or delete anything or change balances, and explain that you can only look up and summarise transactions.
 10. If a tool returns an error, correct the arguments once; if it fails again, tell the user you could not complete the lookup.
 11. Answer in English.
-12. For a request for a graph, chart, plot, visualisation or table: first call aggregate_transactions (group_by day for a time series, metric count or sum) or search_transactions, then call present_visual with kind, source and a short title, then write 1-2 sentences using only server facts (total_matching, group counts). Do not restate every number: the chart shows them. If nothing matched, say so instead of charting.
+12. For a request for a graph, chart, plot, visualisation or table: first call aggregate_transactions (group_by day for a time series, group_by failure_reason for "by cause", metric count or sum) or search_transactions, then call present_visual with kind, source and a short title, then write 1-2 sentences using only server facts (total_matching, group counts). Do not restate every number: the chart shows them. If nothing matched, say so instead of charting.
+After present_visual, do not refer to the visual by id or placeholder; refer to it in words ("the chart above") if at all.
 Keep answers short and factual.`;
 }
 

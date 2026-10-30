@@ -67,6 +67,8 @@ describe('present_visual (D-26)', () => {
     );
     const visualResult = JSON.stringify(toolMsgs.at(-1)?.content);
     expect(visualResult).toContain('Line chart shown');
+    expect(visualResult).not.toMatch(/visual-/); // no id or reference-like token reaches the model
+    expect(visualResult).toContain('"shown":true');
     expect(visualResult).not.toMatch(/215000|480000|4,800/); // the bound numbers are not repeated to the model
     expect(audit.toolCalls.map((c) => [c.toolName, c.validated])).toEqual([
       ['aggregate_transactions', true],
@@ -106,6 +108,52 @@ describe('present_visual (D-26)', () => {
       { key: '2026-10-26', count: 3 },
       { key: '2026-10-27', count: 5 },
     ]);
+  });
+
+  it('aggregate by failure_reason then present_visual gives a bar chart with readable labels, raw keys and the SQL counts', async () => {
+    const agg = dayAgg({
+      metric: 'count',
+      group_by: 'failure_reason',
+      groups: [
+        { key: 'insufficient_funds', currency: null, count: 3, sum_minor: null, sum_display: null },
+        { key: 'beneficiary_account_closed', currency: null, count: 1, sum_minor: null, sum_display: null },
+        { key: 'not_recorded', currency: null, count: 1, sum_minor: null, sum_display: null },
+      ],
+      total_matching: 5,
+    });
+    const { model } = scriptedModel([
+      {
+        tools: [
+          {
+            name: 'aggregate_transactions',
+            input: { metric: 'count', group_by: 'failure_reason', status: 'failed', period: 'last_30_days' },
+          },
+        ],
+      },
+      {
+        tools: [
+          {
+            name: 'present_visual',
+            input: { kind: 'bar', source: 'latest_aggregate', title: 'Failed by cause' },
+          },
+        ],
+      },
+      { text: 'There are 5 failed transactions in total.' },
+    ]);
+    const { args, audit } = makeArgs({ model, reader: fakeReader([], { aggregate: agg }) });
+    const s = await readStream(await handleAsk(args));
+    const part = visualDataPart.parse(visuals(s.dataParts)[0]?.data);
+    const el = part.spec.elements[part.spec.root];
+    expect(el?.type).toBe('BarChart');
+    if (el?.type !== 'BarChart') throw new Error('unreachable');
+    expect(el.props.xKey).toBe('label');
+    expect(el.props.series).toEqual([{ key: 'count', label: 'Transactions' }]);
+    expect(el.props.data).toEqual([
+      { key: 'insufficient_funds', label: 'Insufficient funds', count: 3 },
+      { key: 'beneficiary_account_closed', label: 'Beneficiary account closed', count: 1 },
+      { key: 'not_recorded', label: 'Not recorded', count: 1 },
+    ]);
+    expect(audit.requests[0]).toMatchObject({ status: 'ok' });
   });
 
   it('a table from a search binds the returned rows', async () => {

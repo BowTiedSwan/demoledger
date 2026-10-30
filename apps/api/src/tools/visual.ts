@@ -29,6 +29,12 @@ const fail = (message: string): VisualBuild => ({ ok: false, message });
 
 type Row = Record<string, string | number | null>;
 
+/** "insufficient_funds" -> "Insufficient funds", "not_recorded" -> "Not recorded". */
+export function humaniseKey(key: string): string {
+  const words = key.replaceAll('_', ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 function safeMinor(sum: string | null): number | null {
   if (sum === null) return null;
   const n = Number(sum);
@@ -85,7 +91,8 @@ export function buildVisualSpec(args: PresentVisualArgs, src: VisualSources): Vi
     for (const g of agg.groups) {
       let row = byKey.get(g.key);
       if (!row) {
-        row = { key: g.key };
+        // failure_reason groups keep the raw key in `key` and add a readable `label` for the axis.
+        row = agg.group_by === 'failure_reason' ? { key: g.key, label: humaniseKey(g.key) } : { key: g.key };
         byKey.set(g.key, row);
         order.push(g.key);
       }
@@ -107,7 +114,8 @@ export function buildVisualSpec(args: PresentVisualArgs, src: VisualSources): Vi
           }));
     if (series.length === 0) return fail('The aggregate has no per-currency sums to chart.');
     const data = order.map((k) => byKey.get(k) as Row);
-    const spec = one(kind === 'bar' ? 'BarChart' : 'LineChart', { title, xKey: 'key', series, data });
+    const xKey = agg.group_by === 'failure_reason' ? 'label' : 'key';
+    const spec = one(kind === 'bar' ? 'BarChart' : 'LineChart', { title, xKey, series, data });
     const what = kind === 'bar' ? 'Bar chart' : 'Line chart';
     return {
       ok: true,
@@ -154,7 +162,7 @@ export function buildVisualSpec(args: PresentVisualArgs, src: VisualSources): Vi
           'The aggregate matched no transactions, so there is nothing to tabulate. Tell the user no records matched.',
         );
       const rows: Row[] = agg.groups.map((g) => ({
-        key: g.key,
+        key: agg.group_by === 'failure_reason' ? humaniseKey(g.key) : g.key,
         currency: g.currency,
         count: g.count,
         total: g.sum_display,

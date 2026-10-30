@@ -166,7 +166,7 @@ export function ledgerTools(opts: LedgerToolsOptions) {
   });
 
   const aggregate_transactions = tool({
-    description: `Count or sum this organization's transactions, optionally grouped. Counts and sums are computed in SQL; never compute them yourself. Sums are always split per currency. metric: count|sum; group_by: none|status|wallet|direction|currency|day. ${COMMON_DOC}`,
+    description: `Count or sum this organization's transactions, optionally grouped. Counts and sums are computed in SQL; never compute them yourself. Sums are always split per currency. metric: count|sum; group_by: none|status|wallet|direction|currency|day|failure_reason (answers "by cause", "by reason", "why did they fail"; a missing reason is the group not_recorded). ${COMMON_DOC}`,
     inputSchema: passthroughInput(aggregateTransactionsArgs),
     execute: async (rawInput): Promise<AggregateTransactionsResult | ToolErrorResult> => {
       const t0 = performance.now();
@@ -282,6 +282,14 @@ export function ledgerTools(opts: LedgerToolsOptions) {
       done(true, null, built.points);
       return { ok: true, id, kind: parsed.data.kind, summary: built.summary };
     },
+    // The model must never see the visual id (it echoed it as a stray "[visual-...]" placeholder):
+    // the id lives only on the data-visual part and the client-facing tool output.
+    toModelOutput: ({ output }) => ({
+      type: 'json',
+      value: output.ok
+        ? { shown: true, kind: output.kind, summary: output.summary }
+        : { shown: false, error: output.error.message },
+    }),
   });
 
   const tools = { search_transactions, aggregate_transactions, present_visual } satisfies Record<
