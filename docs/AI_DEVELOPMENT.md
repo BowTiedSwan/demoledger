@@ -209,6 +209,7 @@ The agents' own gate and reviewer had not raised these. They mostly concern depl
 
 **Human-driven product corrections:**
 - **The redesign (D-25).** The user asked for a Midday-inspired visual language: rounded and calm, with a question bubble, a plain answer and inline tool rows. That replaced the agents' earlier strict monochrome, square-cornered styling. The agents reimplemented the look from tokens only, because Midday is AGPL-3.0 and copying its code was ruled out. Generative UI for chart questions (D-26) shipped in the same pass.
+- **The docs against the agent best-practices guide (D-36).** The user caught that the agent docs had drifted from the guide given as a build input: the repo map was a 252-line dump of exported symbols, the diagrams were ASCII, and the skills the guide names had never been used. The docs were redone with those skills; the map is now purpose-first, generated, and drift-checked in CI.
 
 Verification status of each fix: see the Status column in `docs/review-log.md`.
 
