@@ -112,4 +112,4 @@ Every request: `requestId` → `no-store` → `secureHeaders` → `requestLogger
 
 ## Counts
 
-39 test files · 10 ADRs · 2 migrations · 43 guard eval prompts · 19 model eval questions · 3 diagrams
+40 test files · 10 ADRs · 2 migrations · 43 guard eval prompts · 19 model eval questions · 3 diagrams

@@ -172,24 +172,41 @@ export function summarizeToolOutput(output: unknown): string | null {
   return null;
 }
 
-export const PENDING_THINKING = 'Thinking…';
 export const PENDING_ANALYSING = 'Analysing the results…';
 
 /**
- * Continuous-progress row (T-295). While a request is in flight and the in-progress assistant message
- * is NOT currently streaming text or running a tool, something must still show: "Thinking…" before any
- * tool has run, "Analysing the results…" after a finished tool or visual. Null when text is streaming,
+ * Continuous-progress row (T-295): between steps. While a request is in flight and the in-progress
+ * assistant message is NOT streaming text or running a tool, but HAS content (a finished tool or visual),
+ * it reads "Analysing the results…". Before any content the ThinkingOrb shows instead (see progressIndicator). Null when text is streaming,
  * a tool is running (its own row shows the spinner), or the request is not in flight.
  */
 export function pendingStepLabel(status: ChatStatus, last: MessageLike | undefined): string | null {
   if (status !== 'submitted' && status !== 'streaming') return null;
-  if (last?.role !== 'assistant') return PENDING_THINKING;
+  if (last?.role !== 'assistant') return null; // before any part: the ThinkingOrb shows instead
   const meaningful = last.parts.filter(
     (p) => p.type !== 'step-start' && !(p.type === 'text' && !(p.text ?? '').trim()),
   );
   const tail = meaningful.at(-1);
-  if (!tail) return PENDING_THINKING;
+  if (!tail) return null;
   if (tail.type === 'text') return null;
   if (toolNameOfPart(tail) && !isToolFinished(tail.state)) return null;
   return PENDING_ANALYSING;
+}
+
+export type ProgressIndicator = { kind: 'orb'; label: string } | { kind: 'pending'; label: string } | null;
+
+/**
+ * Which "still working" indicator to show. Before the assistant message has any visible content: the
+ * ThinkingOrb with a Shimmer status line (the transient status label wins). After content arrives:
+ * the T-295 pending row between steps. Never both.
+ */
+export function progressIndicator(
+  status: ChatStatus,
+  last: MessageLike | undefined,
+  transientLabel: string | null,
+): ProgressIndicator {
+  if (isWaitingForFirstToken(status, last))
+    return { kind: 'orb', label: waitingStatusLine(transientLabel, last) };
+  const pending = pendingStepLabel(status, last);
+  return pending ? { kind: 'pending', label: pending } : null;
 }

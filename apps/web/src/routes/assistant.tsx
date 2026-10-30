@@ -10,17 +10,24 @@ import {
 import { Message, MessageContent } from '@/components/ai-elements/message';
 import { PromptInput } from '@/components/ai-elements/prompt-input';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
-import { PendingStep } from '@/components/ai-elements/tool';
+import { WaitingOrb } from '@/components/ai-elements/waiting-orb';
 import { ChatMessageView, ErrorBanner } from '@/components/chat-message';
 import { describeTransportError } from '@/lib/ask-errors';
-import { clearStatusLabel, consumePromptFocus, onPromptFocusRequest, useChatInstance } from '@/lib/chat';
-import { type ChatMessage, pendingStepLabel, runningToolLabel, SUGGESTED_QUESTIONS } from '@/lib/chat-parts';
+import {
+  clearStatusLabel,
+  consumePromptFocus,
+  onPromptFocusRequest,
+  useChatInstance,
+  useStatusLabel,
+} from '@/lib/chat';
+import { type ChatMessage, progressIndicator, runningToolLabel, SUGGESTED_QUESTIONS } from '@/lib/chat-parts';
 
 export function AssistantPage() {
   const chat = useChatInstance();
   const { messages, sendMessage, stop, regenerate, status, error, clearError } = useChat<ChatMessage>({
     chat,
   });
+  const statusLabel = useStatusLabel();
   const navigate = useNavigate();
   const { q } = useSearch({ from: '/app/assistant' });
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -64,9 +71,11 @@ export function AssistantPage() {
   }, [q, navigate]);
 
   const last = messages.at(-1);
-  const pending = pendingStepLabel(status, last);
+  const indicator = progressIndicator(status, last, statusLabel);
+  const pending = indicator?.kind === 'pending' ? indicator.label : null;
+  const waiting = indicator?.kind === 'orb' ? indicator.label : null;
   // One polite live region announces the current step ("Searching transactions", "Analysing the results").
-  const announcement = (runningToolLabel(last?.parts ?? []) ?? pending ?? '').replace('…', '');
+  const announcement = (runningToolLabel(last?.parts ?? []) ?? pending ?? waiting ?? '').replace('…', '');
   const transportError = status === 'error' ? describeTransportError(error) : null;
 
   return (
@@ -93,15 +102,16 @@ export function AssistantPage() {
                     streaming={status === 'streaming' && i === messages.length - 1}
                     onRetry={() => void regenerate()}
                     pendingLabel={i === messages.length - 1 ? pending : null}
+                    waitingLabel={i === messages.length - 1 ? waiting : null}
                   />
                 </motion.div>
               ))
             )}
 
-            {pending && last?.role !== 'assistant' ? (
+            {waiting && last?.role !== 'assistant' ? (
               <Message from="assistant">
                 <MessageContent>
-                  <PendingStep label={pending} />
+                  <WaitingOrb label={waiting} />
                 </MessageContent>
               </Message>
             ) : null}

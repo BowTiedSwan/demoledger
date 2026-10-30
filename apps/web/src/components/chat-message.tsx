@@ -4,6 +4,7 @@ import { Message, MessageContent, MessageResponse } from '@/components/ai-elemen
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { Sources } from '@/components/ai-elements/sources';
 import { PendingStep, Tool, type ToolState } from '@/components/ai-elements/tool';
+import { WaitingOrb } from '@/components/ai-elements/waiting-orb';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,12 +66,15 @@ export function ChatMessageView({
   streaming,
   onRetry,
   pendingLabel = null,
+  waitingLabel = null,
 }: {
   message: ChatMessage;
   streaming: boolean;
   onRetry: () => void;
   /** Shown as the last step row while the model is between steps (see pendingStepLabel). */
   pendingLabel?: string | null;
+  /** Before any visible content: shows the ThinkingOrb row instead (never together with pendingLabel). */
+  waitingLabel?: string | null;
 }) {
   if (message.role === 'user') {
     const text = message.parts.map((p) => (p.type === 'text' ? p.text : '')).join('');
@@ -160,6 +164,7 @@ export function ChatMessageView({
           />
         ) : null}
 
+        {waitingLabel ? <WaitingOrb label={waitingLabel} /> : null}
         {pendingLabel ? <PendingStep label={pendingLabel} /> : null}
 
         <Sources ids={sources.map((s) => s.id)} />

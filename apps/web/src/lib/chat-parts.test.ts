@@ -5,8 +5,8 @@ import {
   isWaitingForFirstToken,
   messageNotices,
   PENDING_ANALYSING,
-  PENDING_THINKING,
   pendingStepLabel,
+  progressIndicator,
   runningToolLabel,
   SUGGESTED_QUESTIONS,
   sourceLinks,
@@ -192,10 +192,10 @@ describe('pendingStepLabel (continuous progress, T-295)', () => {
   const msg = (...parts: { type: string; text?: string; state?: string }[]) => ({ role: 'assistant', parts });
   const done = { type: 'tool-search_transactions', state: 'output-available' };
 
-  it('says Thinking before anything has streamed, including right after submit', () => {
-    expect(pendingStepLabel('submitted', undefined)).toBe(PENDING_THINKING);
-    expect(pendingStepLabel('streaming', { role: 'user', parts: [] })).toBe(PENDING_THINKING);
-    expect(pendingStepLabel('streaming', msg({ type: 'step-start' }))).toBe(PENDING_THINKING);
+  it('has no pending row before the message has any content (the orb covers that phase)', () => {
+    expect(pendingStepLabel('submitted', undefined)).toBeNull();
+    expect(pendingStepLabel('streaming', { role: 'user', parts: [] })).toBeNull();
+    expect(pendingStepLabel('streaming', msg({ type: 'step-start' }))).toBeNull();
   });
 
   it('shows after a completed tool part while streaming (the gap that used to look stalled)', () => {
@@ -221,5 +221,41 @@ describe('pendingStepLabel (continuous progress, T-295)', () => {
 
   it('ignores empty text parts', () => {
     expect(pendingStepLabel('streaming', msg(done, { type: 'text', text: '' }))).toBe(PENDING_ANALYSING);
+  });
+});
+
+describe('progressIndicator: orb first, then step rows, never both', () => {
+  const done = { type: 'tool-search_transactions', state: 'output-available' };
+  const asst = (...parts: { type: string; text?: string; state?: string }[]) => ({
+    role: 'assistant',
+    parts,
+  });
+
+  it('shows the ThinkingOrb with the transient status line when there are no parts yet', () => {
+    expect(progressIndicator('submitted', undefined, null)).toEqual({ kind: 'orb', label: 'Thinking' });
+    expect(progressIndicator('streaming', asst(), 'Checking request')).toEqual({
+      kind: 'orb',
+      label: 'Checking request',
+    });
+    expect(progressIndicator('streaming', asst({ type: 'step-start' }), null)?.kind).toBe('orb');
+  });
+
+  it('after a completed tool part it is the pending row, not the orb', () => {
+    expect(progressIndicator('streaming', asst({ type: 'step-start' }, done), null)).toEqual({
+      kind: 'pending',
+      label: PENDING_ANALYSING,
+    });
+  });
+
+  it('is nothing while a tool runs, while text streams, and when the request is not in flight', () => {
+    expect(
+      progressIndicator(
+        'streaming',
+        asst({ type: 'tool-search_transactions', state: 'input-available' }),
+        null,
+      ),
+    ).toBeNull();
+    expect(progressIndicator('streaming', asst(done, { type: 'text', text: 'The' }), null)).toBeNull();
+    expect(progressIndicator('ready', asst(), null)).toBeNull();
   });
 });
