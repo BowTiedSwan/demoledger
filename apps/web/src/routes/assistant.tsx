@@ -1,42 +1,26 @@
 import { useChat } from '@ai-sdk/react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { PlusIcon } from 'lucide-react';
 import { MotionConfig, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ThinkingOrb } from 'thinking-orbs';
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
+import { Message, MessageContent } from '@/components/ai-elements/message';
 import { PromptInput } from '@/components/ai-elements/prompt-input';
-import { Shimmer } from '@/components/ai-elements/shimmer';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
+import { PendingStep } from '@/components/ai-elements/tool';
 import { ChatMessageView, ErrorBanner } from '@/components/chat-message';
-import { Button } from '@/components/ui/button';
 import { describeTransportError } from '@/lib/ask-errors';
-import {
-  clearStatusLabel,
-  consumePromptFocus,
-  onPromptFocusRequest,
-  requestPromptFocus,
-  resetChat,
-  useChatInstance,
-  useStatusLabel,
-} from '@/lib/chat';
-import {
-  type ChatMessage,
-  isWaitingForFirstToken,
-  SUGGESTED_QUESTIONS,
-  waitingStatusLine,
-} from '@/lib/chat-parts';
+import { clearStatusLabel, consumePromptFocus, onPromptFocusRequest, useChatInstance } from '@/lib/chat';
+import { type ChatMessage, pendingStepLabel, runningToolLabel, SUGGESTED_QUESTIONS } from '@/lib/chat-parts';
 
 export function AssistantPage() {
   const chat = useChatInstance();
   const { messages, sendMessage, stop, regenerate, status, error, clearError } = useChat<ChatMessage>({
     chat,
   });
-  const statusLabel = useStatusLabel();
   const navigate = useNavigate();
   const { q } = useSearch({ from: '/app/assistant' });
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -64,15 +48,13 @@ export function AssistantPage() {
     [],
   );
 
-  const newConversation = () => {
-    resetChat();
-    setDraft('');
-    requestPromptFocus();
-  };
+  const [draft, setDraft] = useState('');
+  // A new conversation (header button or command menu) replaces the Chat: drop the unsent draft too.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `chat` identity is the trigger
+  useEffect(() => setDraft(''), [chat]);
 
   // A question handed over from the command menu or a link (?q=...) only prefills the input; the
   // user must press Send, so a crafted link cannot spend quota or start a request by itself.
-  const [draft, setDraft] = useState('');
   const handledQuery = useRef<string | null>(null);
   useEffect(() => {
     if (!q || handledQuery.current === q) return;
@@ -82,21 +64,20 @@ export function AssistantPage() {
   }, [q, navigate]);
 
   const last = messages.at(-1);
-  const waiting = isWaitingForFirstToken(status, last);
+  const pending = pendingStepLabel(status, last);
+  // One polite live region announces the current step ("Searching transactions", "Analysing the results").
+  const announcement = (runningToolLabel(last?.parts ?? []) ?? pending ?? '').replace('…', '');
   const transportError = status === 'error' ? describeTransportError(error) : null;
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-2 py-2">
-          <h1 className="text-base font-semibold">Assistant</h1>
-          <Button type="button" variant="outline" onClick={newConversation} disabled={messages.length === 0}>
-            <PlusIcon aria-hidden />
-            New conversation
-          </Button>
-        </div>
-        <Conversation>
-          <ConversationContent>
+      <div className="relative h-full min-h-0">
+        <h1 className="sr-only">Assistant</h1>
+        <Conversation className="h-full">
+          <p className="sr-only" role="status" aria-live="polite">
+            {announcement}
+          </p>
+          <ConversationContent className="pt-[calc(var(--header-height)+1.5rem)] pb-44 md:pt-[calc(var(--header-height)+1.5rem)] md:pb-44">
             {messages.length === 0 ? (
               <EmptyState onSelect={ask} />
             ) : (
@@ -111,39 +92,45 @@ export function AssistantPage() {
                     message={m}
                     streaming={status === 'streaming' && i === messages.length - 1}
                     onRetry={() => void regenerate()}
+                    pendingLabel={i === messages.length - 1 ? pending : null}
                   />
                 </motion.div>
               ))
             )}
 
-            {waiting ? (
-              <div className="flex items-center gap-3" role="status" aria-live="polite">
-                <ThinkingOrb state="solving" size={20} aria-label="Working on your question" />
-                <Shimmer>{waitingStatusLine(statusLabel, last)}</Shimmer>
-              </div>
+            {pending && last?.role !== 'assistant' ? (
+              <Message from="assistant">
+                <MessageContent>
+                  <PendingStep label={pending} />
+                </MessageContent>
+              </Message>
             ) : null}
 
             {transportError ? (
-              <ErrorBanner
-                message={transportError.message}
-                requestId={transportError.requestId}
-                onRetry={transportError.retryable ? () => void regenerate() : undefined}
-                signInLink={transportError.code === 'unauthorized'}
-              />
+              <div className="w-full max-w-3xl">
+                <ErrorBanner
+                  message={transportError.message}
+                  requestId={transportError.requestId}
+                  onRetry={transportError.retryable ? () => void regenerate() : undefined}
+                  signInLink={transportError.code === 'unauthorized'}
+                />
+              </div>
             ) : null}
           </ConversationContent>
-          <ConversationScrollButton />
+          <ConversationScrollButton className="bottom-44" />
         </Conversation>
 
-        <div className="pb-4 pt-2">
-          <PromptInput
-            busy={busy}
-            onSubmit={ask}
-            onStop={stop}
-            value={draft}
-            onValueChange={setDraft}
-            inputRef={inputRef}
-          />
+        <div className="bottom-fade pointer-events-none absolute inset-x-0 bottom-0 pt-10 pb-4">
+          <div className="pointer-events-auto">
+            <PromptInput
+              busy={busy}
+              onSubmit={ask}
+              onStop={stop}
+              value={draft}
+              onValueChange={setDraft}
+              inputRef={inputRef}
+            />
+          </div>
         </div>
       </div>
     </MotionConfig>

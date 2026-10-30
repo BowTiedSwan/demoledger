@@ -80,7 +80,7 @@ export function TransactionsPage() {
   const hasFilters = Boolean(id || wallet || status || direction || period);
 
   return (
-    <div className="flex flex-col gap-6 py-6">
+    <div className="flex flex-col gap-6 pt-[calc(var(--header-height)+1.5rem)] pb-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-heading">Transactions</h1>
         <p className="text-muted-foreground">Your organization's wallet transactions. Times are in UTC.</p>

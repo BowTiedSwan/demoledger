@@ -52,8 +52,29 @@
   --radius: 0.5rem;
   /* One height for every form control (inputs, selects, buttons): meets the 44px target rule. */
   --control-height: 2.75rem;
+
+  /* Glass and texture (D-37). Values here only; components use the .glass* utilities below. */
+  --grid-line: rgb(150 125 80 / 0.1); /* faint beige grid */
+  --grid-size: 28px;
+  --grid-glow: rgb(226 212 182 / 0.55); /* warm light behind the card so the glass reads */
+  --glass-bg: rgb(255 255 255 / 0.62);
+  --glass-opaque: #fbfaf8; /* fallback: no backdrop-filter, or reduced transparency */
+  --glass-blur: 20px;
+  --glass-saturate: 1.6;
+  --glass-rim: rgb(255 255 255 / 0.85); /* 1px inset highlight on the top edge */
+  --glass-shadow:
+    0 1px 2px rgb(40 30 10 / 0.05), 0 10px 28px -6px rgb(40 30 10 / 0.12),
+    0 28px 56px -16px rgb(40 30 10 / 0.14);
+  --glass-field: rgb(255 255 255 / 0.55);
+  --glass-header-shadow: 0 10px 24px -14px rgb(40 30 10 / 0.18);
+  --scroll-shadow: rgb(40 30 10 / 0.12);
+  --callout-edge: 0 0 0 1px rgb(179 0 27 / 0.1), 0 6px 18px -8px rgb(179 0 27 / 0.25);
+  --focus-halo: rgb(18 18 18 / 0.08);
+  --focus-ring-soft: rgb(18 18 18 / 0.5); /* 3px ring; about 3.9:1 on white */
+  --glass-transition: 220ms;
   --spacing-unit: 8px;
   --ease: ease;
+  --header-height: 4rem; /* overridden at runtime from the measured header */
 }
 
 .dark {
@@ -89,6 +110,20 @@
   --chart-4: #6fd08c;
   --chart-grid: #242424;
   --chart-axis: #a3a3a3;
+
+  --grid-line: rgb(255 240 210 / 0.055);
+  --grid-glow: rgb(120 104 68 / 0.2);
+  --glass-bg: rgb(28 28 28 / 0.55);
+  --glass-opaque: #171717;
+  --glass-rim: rgb(255 255 255 / 0.1);
+  --glass-shadow:
+    0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -6px rgb(0 0 0 / 0.55), 0 28px 56px -16px rgb(0 0 0 / 0.6);
+  --glass-field: rgb(255 255 255 / 0.06);
+  --glass-header-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.7);
+  --scroll-shadow: rgb(0 0 0 / 0.7);
+  --callout-edge: 0 0 0 1px rgb(255 122 138 / 0.14), 0 6px 18px -8px rgb(0 0 0 / 0.7);
+  --focus-halo: rgb(250 250 250 / 0.1);
+  --focus-ring-soft: rgb(250 250 250 / 0.55); /* about 5:1 on the dark page */
 }
 
 @theme inline {
@@ -257,4 +292,106 @@
     background-image: none;
     animation: none;
   }
+}
+
+/*
+ * Glass (D-37 amends the old "no shadows" rule). Translucent surface, blur + saturate, no border:
+ * the edge is a layered soft shadow plus a 1px inset top highlight. Opaque fallbacks for browsers
+ * without backdrop-filter and for prefers-reduced-transparency.
+ */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 var(--glass-rim);
+}
+.glass.focus-wrapper:focus-within {
+  /* Soft focus: a 3px ring (>= 3:1 against the surface) plus a wide faint halo; no hard outline. */
+  outline: none;
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 var(--glass-rim),
+    0 0 0 3px var(--focus-ring-soft),
+    0 0 0 9px var(--focus-halo);
+}
+
+/* Fade under the prompt: content never shows below the glass input. */
+.bottom-fade {
+  background: linear-gradient(to top, var(--background) 0%, var(--background) 45%, transparent 100%);
+}
+.glass-field {
+  background: var(--glass-field);
+}
+
+/* Sticky header: transparent at the top, glass once the content has scrolled under it. */
+.glass-header {
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(0) saturate(1);
+  backdrop-filter: blur(0) saturate(1);
+  transition:
+    background-color var(--glass-transition) ease,
+    box-shadow var(--glass-transition) ease,
+    backdrop-filter var(--glass-transition) ease,
+    -webkit-backdrop-filter var(--glass-transition) ease;
+}
+.glass-header[data-scrolled="true"] {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-header-shadow);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-header[data-scrolled="true"] {
+    background: var(--glass-opaque);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-header[data-scrolled="true"] {
+    background: var(--glass-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Login backdrop: a faint beige grid that fades out toward the edges, with a warm glow. */
+.grid-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+.grid-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(ellipse 50% 40% at 50% 45%, var(--grid-glow), transparent 70%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:
+    auto,
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size);
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 35%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Wide tables scroll sideways inside the answer column; a soft edge shows when more is hidden. */
+.scroll-edges {
+  background:
+    linear-gradient(to right, var(--background) 30%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--background) 30%, transparent) right center / 32px 100% no-repeat local,
+    linear-gradient(to right, var(--scroll-shadow), transparent) left center / 14px 100% no-repeat scroll,
+    linear-gradient(to left, var(--scroll-shadow), transparent) right center / 14px 100% no-repeat scroll;
+}
+
+/* Soft callout edge (errors): same radius language as the glass surfaces, no hard border. */
+.callout-soft {
+  box-shadow: var(--callout-edge);
 }

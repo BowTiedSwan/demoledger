@@ -49,8 +49,8 @@ export function LoginPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-md flex-col justify-center px-4 py-8">
-      <div className="flex flex-col gap-8 rounded-3xl border border-border bg-card p-8">
+    <main className="grid-backdrop flex min-h-svh w-full flex-col items-center justify-center px-4 py-8">
+      <div className="glass flex w-full max-w-md flex-col gap-8 rounded-3xl p-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-heading">DemoLedger</h1>
           <p className="text-muted-foreground">Sign in to ask questions about your wallet transactions.</p>
@@ -67,6 +67,7 @@ export function LoginPage() {
             <Label htmlFor={emailId}>Email</Label>
             <Input
               id={emailId}
+              className="glass-field"
               type="email"
               autoComplete="username"
               required
@@ -79,6 +80,7 @@ export function LoginPage() {
             <Label htmlFor={passwordId}>Password</Label>
             <Input
               id={passwordId}
+              className="glass-field"
               type="password"
               autoComplete="current-password"
               required
@@ -92,7 +94,7 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <section aria-labelledby="test-accounts" className="flex flex-col gap-2 border-t border-border pt-6">
+        <section aria-labelledby="test-accounts" className="flex flex-col gap-2 pt-2">
           <h2 id="test-accounts" className="text-sm font-semibold">
             Test accounts
           </h2>
@@ -103,7 +105,7 @@ export function LoginPage() {
                 key={a.email}
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="glass-field flex-1"
                 onClick={() => {
                   setEmail(a.email);
                   setPassword(a.password);

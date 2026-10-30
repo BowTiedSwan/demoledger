@@ -48,10 +48,7 @@ export function PromptInput({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="focus-wrapper flex flex-col gap-2 rounded-2xl border border-input bg-card p-2"
-    >
+    <form onSubmit={handleSubmit} className="glass focus-wrapper flex flex-col gap-2 rounded-3xl p-3">
       <Label htmlFor={id} className="sr-only">
         Ask about your transactions
       </Label>
