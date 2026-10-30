@@ -202,3 +202,4 @@ Notes: no timeouts and no `quota_exhausted` in any run. The first gpt-oss-120b r
 - [x] T-295 web-builder: continuous progress: pending step row ("Thinking…" / "Analysing the results…") between steps, running tool rows with spinner and "…", same row height, polite live announcer, reduced-motion safe (filed by coordinator)
 
 - [x] T-300 db-builder: committed readable snapshot `packages/db/seed-data/transactions.csv` (+ README.md with seed users) via `pnpm db:export-seed`; drift test in `src/seed/export.test.ts` (filed by coordinator)
+- [x] T-301 web-builder: New conversation is a filled secondary control in its own "Conversation actions" group on the LEFT after the nav (vertical separator, apart from the account cluster); disabled while empty stays VISIBLE at 60% emphasis with not-allowed cursor and tooltip "Start a conversation first" (chose visible+tooltip over hiding); icon-only on narrow screens (filed by coordinator)

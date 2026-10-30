@@ -4,8 +4,8 @@ import { LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CommandMenu } from '@/components/command-menu';
+import { ConversationActions } from '@/components/conversation-actions';
 import { NavLinks } from '@/components/nav-links';
-import { NewConversationButton } from '@/components/new-conversation-button';
 import { Button } from '@/components/ui/button';
 import { useScrolledWithin } from '@/hooks/use-scrolled';
 import { useTheme } from '@/hooks/use-theme';
@@ -61,9 +61,9 @@ export function AppShell({ me }: { me: MeResponse }) {
           <div className="flex min-w-0 flex-wrap items-center gap-x-4">
             <span className="py-2 pr-2 text-lg">DemoLedger</span>
             <NavLinks />
+            {pathname === '/assistant' ? <ConversationActions /> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2 py-2">
-            {pathname === '/assistant' ? <NewConversationButton /> : null}
             <div className="flex min-w-0 flex-col text-right leading-tight" data-testid="identity">
               <span className="truncate text-sm">{me.organization.name}</span>
               <span className="truncate font-mono text-[13px] text-muted-foreground">{me.user.email}</span>
