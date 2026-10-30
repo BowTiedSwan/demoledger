@@ -1,0 +1,19 @@
+{
+  "name": "@demoledger/evals",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "eval:guard": "tsx --env-file-if-exists=../.env src/guard.ts",
+    "eval:llm": "tsx --env-file-if-exists=../.env src/llm.ts"
+  },
+  "dependencies": {
+    "@demoledger/api": "workspace:*",
+    "@demoledger/db": "workspace:*",
+    "@demoledger/shared": "workspace:*",
+    "zod": "4.6.7"
+  }
+}
