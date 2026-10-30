@@ -11,6 +11,7 @@
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @demoledger/db db:migrate",
+    "db:export-seed": "pnpm --filter @demoledger/db db:export-seed",
     "db:seed": "pnpm --filter @demoledger/db db:seed",
     "db:reset": "pnpm --filter @demoledger/db db:reset",
     "typecheck": "tsc -p tsconfig.json && pnpm -r --parallel typecheck",

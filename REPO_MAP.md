@@ -108,8 +108,8 @@ Every request: `requestId` → `no-store` → `secureHeaders` → `requestLogger
 
 ## Root scripts (generated from `package.json`)
 
-`dev`: API on :3001 and web on :5173 · `db:up`: start Postgres (compose) · `db:down`: stop Postgres · `db:migrate`: apply migrations (owner role) · `db:seed`: seed tenants, users and 100 transactions · `db:reset`: drop schema, migrate, roles.sql, seed (dev and test DBs only) · `typecheck`: tsc for the root and every package · `lint`: biome check · `format`: biome check --write · `test`: vitest, all projects (needs `pnpm db:up`) · `test:watch`: vitest watch · `smoke:live`: one real Workers AI request (needs CF_* credentials) · `eval:guard`: guard eval; Clef column needs CF_* credentials · `eval:llm`: model eval (needs CF_* credentials; spends Neurons) · `repo-map`: regenerate this file; `--check` fails on drift
+`dev`: API on :3001 and web on :5173 · `db:up`: start Postgres (compose) · `db:down`: stop Postgres · `db:migrate`: apply migrations (owner role) · `db:export-seed`: pnpm --filter @demoledger/db db:export-seed · `db:seed`: seed tenants, users and 100 transactions · `db:reset`: drop schema, migrate, roles.sql, seed (dev and test DBs only) · `typecheck`: tsc for the root and every package · `lint`: biome check · `format`: biome check --write · `test`: vitest, all projects (needs `pnpm db:up`) · `test:watch`: vitest watch · `smoke:live`: one real Workers AI request (needs CF_* credentials) · `eval:guard`: guard eval; Clef column needs CF_* credentials · `eval:llm`: model eval (needs CF_* credentials; spends Neurons) · `repo-map`: regenerate this file; `--check` fails on drift
 
 ## Counts
 
-38 test files · 10 ADRs · 2 migrations · 43 guard eval prompts · 19 model eval questions · 3 diagrams
+39 test files · 10 ADRs · 2 migrations · 43 guard eval prompts · 19 model eval questions · 3 diagrams

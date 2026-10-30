@@ -200,3 +200,5 @@ Notes: no timeouts and no `quota_exhausted` in any run. The first gpt-oss-120b r
 - [x] T-291 web-builder: bottom fade under the prompt, soft focus ring on glass inputs, New conversation moved into the glass header on /assistant (filed by coordinator)
 - [x] T-294 web-builder: nowrap table columns with scroll edges; server drop mid-answer shows an error callout with Try again (stream-guard), unreachable-server copy, soft callout edge (filed by coordinator)
 - [x] T-295 web-builder: continuous progress: pending step row ("Thinking…" / "Analysing the results…") between steps, running tool rows with spinner and "…", same row height, polite live announcer, reduced-motion safe (filed by coordinator)
+
+- [x] T-300 db-builder: committed readable snapshot `packages/db/seed-data/transactions.csv` (+ README.md with seed users) via `pnpm db:export-seed`; drift test in `src/seed/export.test.ts` (filed by coordinator)
