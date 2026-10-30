@@ -3,6 +3,7 @@ import { askDataPartSchemas } from '@demoledger/shared';
 import { DefaultChatTransport } from 'ai';
 import { useSyncExternalStore } from 'react';
 import type { ChatMessage } from './chat-parts';
+import { guardedFetch } from './stream-guard';
 
 /**
  * One Chat per signed-in browser session, kept at module scope so the conversation survives
@@ -34,6 +35,7 @@ function createChat(): Chat<ChatMessage> {
     transport: new DefaultChatTransport({
       api: '/api/ask',
       credentials: 'include',
+      fetch: guardedFetch,
       // Resolved per request, so a new conversation sends its new ID.
       body: () => ({ conversationId }),
     }),

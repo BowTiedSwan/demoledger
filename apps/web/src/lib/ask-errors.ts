@@ -5,9 +5,10 @@ import {
   type AskErrorCode,
   errorEnvelope,
 } from '@demoledger/shared';
+import { StreamTruncatedError } from './stream-guard';
 
 export interface DisplayedError {
-  code: AskErrorCode | 'unauthorized';
+  code: AskErrorCode | 'unauthorized' | 'unreachable' | 'interrupted';
   /** Friendly, user-facing copy. */
   message: string;
   retryable: boolean;
@@ -23,6 +24,11 @@ const RETRYABLE: ReadonlySet<AskErrorCode> = new Set([
 
 /** DemoLedger's own per-user limiter (HTTP 429), distinct from the AI provider's rate limit. */
 export const USER_RATE_LIMIT_MESSAGE = 'You are asking too quickly. Wait a moment, then try again.';
+
+/** The API is down, restarting, or the network dropped: no JSON error envelope came back. */
+export const UNREACHABLE_MESSAGE = "Can't reach the server right now. Try again in a moment.";
+/** The stream ended without a finish part: the server dropped mid-answer. */
+export const INTERRUPTED_MESSAGE = 'The answer was interrupted before it finished. Try again.';
 
 export const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Sign in again to continue.';
 
@@ -73,6 +79,11 @@ export function describeTransportError(error: Error | undefined): DisplayedError
     }
     return describeAskError(API_TO_ASK[code] ?? 'internal_error', requestId);
   }
-  // Network failures surface as TypeError("Failed to fetch") and similar.
-  return describeAskError('internal_error');
+  if (error instanceof StreamTruncatedError) {
+    return { code: 'interrupted', message: INTERRUPTED_MESSAGE, retryable: true };
+  }
+  // No error envelope: the fetch rejected (network error, TypeError "Failed to fetch"), or a proxy
+  // 502/503/504 / plain-text body came back instead of our API. Genuine API 500s always carry an
+  // envelope with a requestId and are handled above, so they keep the internal_error copy.
+  return { code: 'unreachable', message: UNREACHABLE_MESSAGE, retryable: true };
 }

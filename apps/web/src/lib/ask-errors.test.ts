@@ -4,10 +4,13 @@ import {
   askErrorCopy,
   describeAskError,
   describeTransportError,
+  INTERRUPTED_MESSAGE,
   isAskErrorCode,
   SESSION_EXPIRED_MESSAGE,
+  UNREACHABLE_MESSAGE,
   USER_RATE_LIMIT_MESSAGE,
 } from './ask-errors';
+import { StreamTruncatedError } from './stream-guard';
 
 describe('askErrorCopy', () => {
   it('uses the shared copy for every code', () => {
@@ -58,9 +61,32 @@ describe('describeTransportError', () => {
     expect(d?.message).toBe(SESSION_EXPIRED_MESSAGE);
   });
 
-  it('never shows raw text for unparseable errors', () => {
+  it('a fetch rejection means the server is unreachable, and is retryable', () => {
     const d = describeTransportError(new TypeError('Failed to fetch'));
+    expect(d?.code).toBe('unreachable');
+    expect(d?.message).toBe(UNREACHABLE_MESSAGE);
+    expect(d?.retryable).toBe(true);
+  });
+
+  it('a proxy-level 502/503/504 (no JSON envelope) also reads as unreachable, never raw text', () => {
+    for (const body of ['Bad Gateway', '<html>503</html>', '']) {
+      const d = describeTransportError(new Error(body));
+      expect(d?.message).toBe(UNREACHABLE_MESSAGE);
+      expect(d?.message).not.toContain('html');
+    }
+  });
+
+  it('a genuine API 500 envelope with a requestId keeps the internal_error copy', () => {
+    const d = describeTransportError(envelope('internal_error', 'req-9'));
     expect(d?.code).toBe('internal_error');
     expect(d?.message).toBe(ASK_ERROR_MESSAGES.internal_error);
+    expect(d?.requestId).toBe('req-9');
+  });
+
+  it('a stream that ended without a finish part reads as interrupted and retryable', () => {
+    const d = describeTransportError(new StreamTruncatedError());
+    expect(d?.code).toBe('interrupted');
+    expect(d?.message).toBe(INTERRUPTED_MESSAGE);
+    expect(d?.retryable).toBe(true);
   });
 });

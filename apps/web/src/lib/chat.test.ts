@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describeTransportError, INTERRUPTED_MESSAGE, UNREACHABLE_MESSAGE } from './ask-errors';
 import { getChat, getConversationId, resetChat } from './chat';
 
 const bodies: Record<string, unknown>[] = [];
@@ -46,5 +47,50 @@ describe('conversation', () => {
 
     await getChat().sendMessage({ text: 'next' });
     expect(bodies.at(-1)?.conversationId).toBe(after);
+  });
+});
+
+describe('server drops mid-answer (T-294)', () => {
+  const stream = (body: string) =>
+    new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+
+  it('a stream that ends without a finish part puts the chat in error with the interrupted copy', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => stream('data: {"type":"start","messageId":"m1"}\n\ndata: {"type":"start-step"}\n\n')),
+    );
+    resetChat();
+    const chat = getChat();
+    await chat.sendMessage({ text: 'a question' });
+    expect(chat.status).toBe('error');
+    expect(describeTransportError(chat.error)?.message).toBe(INTERRUPTED_MESSAGE);
+  });
+
+  it('a complete stream is not an error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        stream('data: {"type":"start","messageId":"m1"}\n\ndata: {"type":"finish"}\n\ndata: [DONE]\n\n'),
+      ),
+    );
+    resetChat();
+    const chat = getChat();
+    await chat.sendMessage({ text: 'a question' });
+    expect(chat.status).toBe('ready');
+    expect(chat.error).toBeUndefined();
+  });
+
+  it('a fetch rejection gives the unreachable copy', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+    );
+    resetChat();
+    const chat = getChat();
+    await chat.sendMessage({ text: 'a question' });
+    expect(chat.status).toBe('error');
+    expect(describeTransportError(chat.error)?.message).toBe(UNREACHABLE_MESSAGE);
   });
 });
