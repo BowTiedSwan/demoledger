@@ -65,7 +65,8 @@ More to try:
 All periods are **UTC**, and weeks start on Monday.
 
 **Visual answers (charts, tables, stats).**
-- **Try it:** "Show me a graph of outgoing transactions for the past week."
+- **Try it:** "Show me a graph of outgoing transactions for the past week." or "Show me a chart of failed transactions in the past month by cause." (aggregates support `group_by: failure_reason`; a missing reason is counted as "Not recorded").
+- **Progress:** each step shows as it runs ("Searching transactions…", then "Analysing the results…") until the answer streams, so a multi-step answer never looks stalled. If the stream drops or the server is unreachable, the answer shows an error with **Try again**.
 - **How it works:**
   - The assistant first looks the data up with a normal tool call.
   - It then calls `present_visual` to choose a bar chart, line chart, table or stat.
@@ -308,8 +309,7 @@ The tenant comes only from the validated Better Auth session, and every request 
 
 ## Unfinished
 
-- **Model evaluation depth:** each model has a single 14-question run. Live UI verification of the new default (Gemma) is in progress, and `@cf/qwen/qwen3.8-27b` was not evaluated.
-- **Live chart check and the eval cases q15–q18:** pending, because the free daily Neuron allowance ran out on 2026-10-30 (D-27). They run after the 00:00 UTC reset.
+- **Model evaluation depth:** the alternatives each have a single 14-question run; the default (Gemma) also has the full 18-question run (follow-ups and visuals included, 100% on every metric) and live UI checks. `@cf/qwen/qwen3.8-27b` was not evaluated.
 - **Tool timeout:** there is no separate tool abort; `statement_timeout` (5 s) on the reader pool is the effective tool timeout.
 - **Production deployment** (single domain, secret manager, shared rate-limit store): described, not built.
 - **Optional demo video:** not recorded; the reproduction steps above replace it.
