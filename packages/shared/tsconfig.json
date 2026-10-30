@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  // DOM lib only for isomorphic globals (AbortSignal); shared must not import Node or DOM APIs.
+  "compilerOptions": { "lib": ["ES2024", "DOM"] },
+  "include": ["vitest.config.ts", "src"]
+}
