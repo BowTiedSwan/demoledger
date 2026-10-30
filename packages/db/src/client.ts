@@ -9,6 +9,8 @@ export interface PoolOptions {
   /** Applied as Postgres `statement_timeout` on every connection. */
   statementTimeoutMs?: number;
   max?: number;
+  /** Max wait to acquire a connection from the pool before failing (default 5000). */
+  connectionTimeoutMs?: number;
   applicationName?: string;
   /** Called when an idle client errors (e.g. Postgres restart). Defaults to a JSON line on stderr. */
   onError?: (err: Error) => void;
@@ -19,6 +21,7 @@ export function createPool(connectionString: string, opts: PoolOptions = {}): pg
   const pool = new pg.Pool({
     connectionString,
     max: opts.max ?? 5,
+    connectionTimeoutMillis: opts.connectionTimeoutMs ?? 5000,
     statement_timeout: opts.statementTimeoutMs ?? 5000,
     application_name: opts.applicationName ?? 'demoledger',
   });

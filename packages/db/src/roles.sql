@@ -47,3 +47,39 @@ BEGIN
   EXECUTE format('GRANT CONNECT ON DATABASE %I TO ledger_reader, ledger_app', current_database());
 END
 $$;
+
+-- Row-level security (defense in depth behind the repository's tenant_id = $1 filter).
+-- Policies live here, not in drizzle migrations: drizzle's pgPolicy cannot express FORCE ROW
+-- LEVEL SECURITY, and policies naming ledger_reader/ledger_app would fail in migrations because
+-- the roles are created by this file after migrating. Session variables are set by the API per
+-- transaction: set_config('app.tenant_id', ..., true) / set_config('app.user_id', ..., true).
+-- An unset or empty variable makes the predicate NULL/false, so access fails closed (no rows).
+-- The owner (superuser in compose) bypasses RLS: migrations and the seed are unaffected.
+--
+-- Not covered by RLS, deliberately:
+--   * ai_requests / ai_tool_calls: ledger_app has INSERT only (no SELECT), so nothing can be read.
+--   * Better Auth tables: authentication must look up users, sessions and members across tenants
+--     before any tenant is known, so a tenant predicate cannot apply.
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON public.transactions;
+CREATE POLICY tenant_isolation ON public.transactions FOR SELECT TO ledger_reader
+  USING (tenant_id = current_setting('app.tenant_id', true));
+
+ALTER TABLE public.ai_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_conversations FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS owner_select ON public.ai_conversations;
+DROP POLICY IF EXISTS owner_insert ON public.ai_conversations;
+CREATE POLICY owner_select ON public.ai_conversations FOR SELECT TO ledger_app
+  USING (tenant_id = current_setting('app.tenant_id', true) AND user_id = current_setting('app.user_id', true));
+CREATE POLICY owner_insert ON public.ai_conversations FOR INSERT TO ledger_app
+  WITH CHECK (tenant_id = current_setting('app.tenant_id', true) AND user_id = current_setting('app.user_id', true));
+
+ALTER TABLE public.ai_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_messages FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS owner_select ON public.ai_messages;
+DROP POLICY IF EXISTS owner_insert ON public.ai_messages;
+CREATE POLICY owner_select ON public.ai_messages FOR SELECT TO ledger_app
+  USING (tenant_id = current_setting('app.tenant_id', true) AND user_id = current_setting('app.user_id', true));
+CREATE POLICY owner_insert ON public.ai_messages FOR INSERT TO ledger_app
+  WITH CHECK (tenant_id = current_setting('app.tenant_id', true) AND user_id = current_setting('app.user_id', true));
