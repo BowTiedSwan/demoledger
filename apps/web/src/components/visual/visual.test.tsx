@@ -76,6 +76,30 @@ describe('catalog rendering', () => {
     expect(out).toContain('€2,316.50');
   });
 
+  it('renders null and empty table cells as a dash labelled Not applicable, not "No data"', () => {
+    const out = html(
+      specOf({
+        type: 'Table',
+        props: {
+          title: 'Recent',
+          columns: [
+            { key: 'id', label: 'Transaction' },
+            { key: 'reason', label: 'Failure reason' },
+          ],
+          rows: [
+            { id: 'TXN-B-0001', reason: null },
+            { id: 'TXN-B-0002', reason: '' },
+            { id: 'TXN-B-0003', reason: 'Not recorded' },
+          ],
+        },
+      }),
+    );
+    expect(out.match(/aria-label="Not applicable"/g)).toHaveLength(2);
+    expect(out).toContain('—');
+    expect(out).toContain('Not recorded');
+    expect(out).not.toContain('No data');
+  });
+
   it('renders a stat', () => {
     const out = html(
       specOf({ type: 'Stat', props: { label: 'Failed yesterday', value: '5', sublabel: 'Alpha' } }),

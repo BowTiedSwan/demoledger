@@ -37,7 +37,13 @@ export const { registry } = defineRegistry(catalog, {
                 <tr key={i} className="border-t border-border">
                   {props.columns.map((c) => (
                     <td key={c.key} className={`px-3 py-2 ${ALIGN[c.align ?? 'left']}`}>
-                      {formatSeriesValue(row[c.key], undefined)}
+                      {row[c.key] === null || row[c.key] === undefined || row[c.key] === '' ? (
+                        <span role="img" aria-label="Not applicable">
+                          —
+                        </span>
+                      ) : (
+                        formatSeriesValue(row[c.key], undefined)
+                      )}
                     </td>
                   ))}
                 </tr>
