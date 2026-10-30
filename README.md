@@ -13,13 +13,18 @@ All data is synthetic: 100 fictional transactions across two fictional tenants.
 
 - Node **24** (`.nvmrc`) and pnpm **10** (`corepack enable` or `npm i -g pnpm@10`).
 - Docker, for PostgreSQL. Host ports 5433 (Postgres), 3001 (API) and 5173 (web) must be free.
-- Optional: a Cloudflare account on the Workers **Free** plan, for live LLM answers (see [Live smoke test](#live-smoke-test)). Everything else, including every test, runs without it.
+- Optional: Cloudflare Workers AI credentials for live AI answers. The repo owner provides them (see [Setup](#setup)). Everything else, including every test, runs without them.
 
 ## Setup
 
 ```bash
 pnpm install
 cp .env.example .env
+```
+
+> **Cloudflare credentials.** For convenience, the repo owner will provide the Cloudflare credentials, `CF_ACCOUNT_ID` and `CF_API_TOKEN`, separately. Put them in `.env` as `CF_ACCOUNT_ID=…` and `CF_API_TOKEN=…` (both lines already exist there, empty), and never commit them. Everything except the live AI features works without them: the transactions screen, the REST API and every test run as normal, the guard falls back to the local heuristic, and the assistant replies "The AI provider is not configured on this server" (`llm_unconfigured`, still audited). If you add them later, restart `pnpm dev`.
+
+```bash
 # set a real secret (the API refuses the placeholder):
 sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 32)|" .env && rm .env.bak
 pnpm db:up        # postgres:17 on 127.0.0.1:5433 (loopback only), creates demoledger + demoledger_test
@@ -29,7 +34,7 @@ pnpm dev          # API on http://localhost:3001, web on http://localhost:5173
 
 Open http://localhost:5173 and use **Sign in as Alpha ops** or **Sign in as Beta ops**. The **Transactions** screen has filters for wallet, status, direction and period, and pages through 10 rows at a time. The **Assistant** screen is the chat.
 
-With Cloudflare credentials in `.env` (see [Live smoke test](#live-smoke-test)), the assistant answers live. Without them, the transactions screen and the REST API work fully. The assistant runs the guard and then shows "The AI provider is not configured on this server", and that request is still audited.
+With the credentials in `.env`, the assistant answers live and the guard uses Clef-flash plus the heuristic.
 
 Seed dates move with the run date (ADR 0005). If the dev database was seeded on an earlier day, re-run `pnpm db:reset` so that "yesterday" and "this week" have data.
 
@@ -203,12 +208,14 @@ Without credentials, `/api/ask` answers with a `data-error` part carrying `llm_u
 
 ```bash
 pnpm db:up                                   # tests need Postgres; they reset and seed demoledger_test themselves
-pnpm typecheck && pnpm lint && pnpm test     # the full gate; no network LLM access, no credentials needed
+pnpm repo-map --check && pnpm typecheck && pnpm lint && pnpm test   # the CI gate; no network LLM access, no credentials
 pnpm exec vitest run --project api           # one project: shared | db | api | web | evals
 pnpm eval:guard                              # heuristic vs Clef-flash on 43 labelled prompts (Clef column needs credentials)
 pnpm eval:llm                                # tool-choice accuracy, valid-args rate, grounded citations, latency per model (needs credentials)
-pnpm repo-map                                # regenerate REPO_MAP.md
+pnpm repo-map                                # regenerate REPO_MAP.md after adding, moving or renaming files
 ```
+
+The gate runs 437 tests in 32 files (2026-10-30).
 
 Test coverage:
 - **Tenant isolation:** repository, HTTP over cookie and bearer, and AI tools against Postgres.
@@ -217,14 +224,14 @@ Test coverage:
 - **Mocked AI workflows:** grounded answer, injected `tenant_id`, step cap, fabricated ID, unknown tool, malformed JSON.
 - **Reliability:** 429, quota, timeout, 5xx.
 - **Guard:** fixtures and fail modes.
-- **Database:** role grants and append-only audit.
-- **Web:** markdown and CSP hardening.
+- **Database:** role grants, RLS that fails closed without a tenant context, and append-only audit.
+- **Web:** markdown and CSP hardening, visual rendering from the fixed catalog, the command menu.
 
 Guard eval (43 prompts): the heuristic scores 90.7% accuracy and 85.7% detection with 0% false blocks; Clef-flash alone scores 76.7% and 64.3% with 0% false blocks.
 
 ### Live smoke test
 
-**Status: passed live on 2026-10-30** (R29), on the Workers Free plan with no payment method. Recorded output from the current default model, trimmed; the full audit JSON is printed by the command:
+**Status: passed live on 2026-10-30** (R29), on the Workers AI free daily allowance. Recorded output from the current default model, trimmed; the full audit JSON is printed by the command:
 
 ```text
 $ pnpm smoke:live
@@ -259,24 +266,33 @@ Live eval results are summarized in ADR 0007:
 - `eval:llm` (T-219): the default Gemma scored 100% on tool choice, key args, valid args and fact accuracy, with 92.3% grounded, at p50 4.9 s / p95 20.1 s. The comparison with gpt-oss-120b and GLM is in `docs/EVALS.md`; why the default changed twice is in ADR 0007.
 - `eval:guard`: heuristic 90.7% accuracy, Clef-flash alone 76.7%, both with 0% false blocks.
 
-To reproduce, or to set up a fresh environment:
-
-1. In the Cloudflare dashboard (Workers **Free** plan; do not add a payment method), copy your **Account ID** (Workers & Pages → Overview → Account ID).
-2. Create an API token: My Profile → API Tokens → Create Token → Custom token. Grant **Account → Workers AI → Read** only, scoped to that account.
-3. Put both in `.env` as `CF_ACCOUNT_ID=…` and `CF_API_TOKEN=…`. Never commit them.
-4. Run:
-   ```bash
-   pnpm db:reset
-   pnpm smoke:live      # exits 0 only if a tool was called and the answer is grounded
-   pnpm eval:guard      # adds the Clef-flash column
-   pnpm eval:llm        # default model; LLM_EVAL_MODELS=@cf/google/gemma-4-26b-a4b-it,@cf/openai/gpt-oss-120b pnpm eval:llm to compare
-   ```
+To reproduce, put the owner-provided `CF_ACCOUNT_ID` and `CF_API_TOKEN` in `.env` (see [Setup](#setup)). To use your own Cloudflare account instead, copy its **Account ID** (Workers & Pages → Overview) and create a custom API token with **Account → Workers AI → Read** only, scoped to that account. Then run:
+```bash
+pnpm db:reset
+pnpm smoke:live      # exits 0 only if a tool was called and the answer is grounded
+pnpm eval:guard      # adds the Clef-flash column
+pnpm eval:llm        # default model; LLM_EVAL_MODELS=@cf/google/gemma-4-26b-a4b-it,@cf/openai/gpt-oss-120b pnpm eval:llm to compare
+```
 
 Without credentials, `pnpm smoke:live` exits 1 with these instructions. Restart `pnpm dev` after editing `.env`. With credentials, the guard becomes Clef-flash automatically, unless `GUARD_PROVIDER` is set. Evals draw on the shared 10,000 Neurons/day allowance, so run them manually.
 
+## Architecture
+
+The request path of one assistant question (text twin: [`docs/diagrams/ask-request-path.md`](docs/diagrams/ask-request-path.md)):
+
+![/api/ask request path: middleware, guard, model and tool loop under RLS, answer checks, stream and audit](docs/diagrams/ask-request-path.svg)
+
+The six layers of the tenant boundary ([text twin](docs/diagrams/tenant-boundary-layers.md)) and the data model with role access and RLS ([text twin](docs/diagrams/data-model.md)):
+
+![Tenant boundary: six layers from the session to row-level security](docs/diagrams/tenant-boundary-layers.svg)
+
+![Data model: organization (the tenant), auth tables, transactions, audit and conversation tables, with role access and RLS](docs/diagrams/data-model.svg)
+
+`REPO_MAP.md` is the generated module map, with the API routes, web routes, tools and tables. Production notes are in `docs/ARCHITECTURE.md`.
+
 ## Security model in one paragraph
 
-The tenant comes only from the validated Better Auth session, and every request re-checks membership. Repository functions take `tenantId` first and always bind it in SQL. The AI tools get the tenant from a closure, and their strict argument schemas reject `tenant_id`. The API connects as `ledger_reader` (SELECT on `transactions` only) and `ledger_app` (auth tables plus INSERT-only audit). LLM-generated SQL is never executed. Tool output reaches the model inside an untrusted-data block, and cited IDs are checked against this request's results. The prompt-injection guard is defense in depth. The UI renders no remote images or external links, and the CSP blocks them anyway. Details: `docs/ARCHITECTURE.md`.
+The tenant comes only from the validated Better Auth session, and every request re-checks membership. Repository functions take `tenantId` first and always bind it in SQL. The AI tools get the tenant from a closure, and their strict argument schemas reject `tenant_id`. The API connects as `ledger_reader` (SELECT on `transactions` only) and `ledger_app` (auth tables, INSERT-only audit, conversation history), and refuses to boot if either role is a superuser or bypasses RLS. Postgres row-level security is a second, independent layer: every query sets the tenant context in its own transaction, and a query without it returns no rows (ADR 0010). LLM-generated SQL is never executed. Tool output reaches the model inside an untrusted-data block, and cited IDs are checked against this request's results. The prompt-injection guard is defense in depth. The UI renders no remote images or external links, and the CSP blocks them anyway. An external OWASP review led to further hardening: signed bearer tokens only, `Cache-Control: no-store` on every API response, forwarding headers ignored unless `TRUST_PROXY_HEADERS=true`, body limits on auth routes, and Postgres bound to loopback (`docs/OWASP_RESPONSE.md`). Details: `docs/ARCHITECTURE.md`.
 
 ## Known limitations
 
@@ -300,10 +316,13 @@ The tenant comes only from the validated Better Auth session, and every request 
 
 ## Documentation
 
-`docs/README.md` indexes the docs:
-- `docs/ARCHITECTURE.md`: production-readiness notes.
+`docs/README.md` indexes the docs and says which one owns which fact. The main entry points:
+- `docs/ARCHITECTURE.md` and `docs/diagrams/`: request path, tenant boundaries, data model, production notes.
+- `REPO_MAP.md`: generated map of modules, routes, tools and tables (`pnpm repo-map`).
+- `CONTEXT.md`: the domain vocabulary.
+- `docs/adr/` and `docs/DECISIONS.md`: decisions and judgement calls.
 - `docs/REQUIREMENTS.md`: R1–R39 traceability.
+- `docs/EVALS.md`: guard, model and smoke results.
+- `docs/OWASP_ANALYSIS.md` and `docs/OWASP_RESPONSE.md`: the external security review and the response to each finding.
 - `docs/AI_DEVELOPMENT.md`: how the AI-assisted build was checked.
-- `docs/adr/`: decisions.
-- `CONTEXT.md`: glossary.
-- `AGENTS.md`: rules for coding agents.
+- `AGENTS.md`: rules and verified commands for coding agents (`CLAUDE.md` imports it).
