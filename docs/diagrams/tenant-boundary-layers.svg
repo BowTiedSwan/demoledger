@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968 640" width="968" height="640" role="img" aria-labelledby="tenant-boundary-layers-title tenant-boundary-layers-desc">
+<title id="tenant-boundary-layers-title">Tenant boundary: six layers</title>
+<desc id="tenant-boundary-layers-desc">Layer stack of the tenant boundary: session, membership re-check, closure-scoped tools, repository WHERE clause, database role grants and row-level security, with what each layer enforces and what the next layer catches if it fails.</desc>
+<style>
+.bg{fill:#f7f6f3}.mask{fill:#f7f6f3}.box{fill:#ffffff;stroke:#121212}.box2{fill:#ffffff;stroke:#8a8882}
+.focal{fill:#fbf2f3;stroke:#b3001b}.ink{fill:#121212}.muted{fill:#5c5c5c}.acc{fill:#b3001b}.lnk{fill:#146c2e}
+.s-muted{stroke:#5c5c5c}.s-acc{stroke:#b3001b}.s-lnk{stroke:#146c2e}.s-ink{stroke:#121212}.s-rule{stroke:#e2e0da}
+.s-tag{stroke:#8a8882}.life{stroke:#b9b7b1}.frame{fill:#f2f1ed;stroke:#c9c7c1}.act{fill:#e7e5e0;stroke:#5c5c5c}
+.row{fill:#ffffff}.row-alt{fill:#faf9f7}.none{fill:none}
+.sans{font-family:"Hedvig Letters Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){
+.bg{fill:#121212}.mask{fill:#121212}.box{fill:#1c1c1c;stroke:#fafafa}.box2{fill:#1c1c1c;stroke:#6b6b6b}
+.focal{fill:#2a1518;stroke:#ff7a8a}.ink{fill:#fafafa}.muted{fill:#a3a3a3}.acc{fill:#ff7a8a}.lnk{fill:#6fd08c}
+.s-muted{stroke:#a3a3a3}.s-acc{stroke:#ff7a8a}.s-lnk{stroke:#6fd08c}.s-ink{stroke:#fafafa}.s-rule{stroke:#2e2e2e}
+.s-tag{stroke:#6b6b6b}.life{stroke:#4a4a4a}.frame{fill:#171717;stroke:#3a3a3a}.act{fill:#262626;stroke:#a3a3a3}
+.row{fill:#1c1c1c}.row-alt{fill:#161616}
+}
+</style>
+<defs>
+<marker id="tenant-boundary-layers-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="muted"/></marker>
+<marker id="tenant-boundary-layers-arrow-acc" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="acc"/></marker>
+<marker id="tenant-boundary-layers-arrow-lnk" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="lnk"/></marker>
+<marker id="tenant-boundary-layers-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" class="none s-muted" stroke-width="1.2"/></marker>
+</defs>
+<rect width="100%" height="100%" class="bg"/>
+<text x="24" y="34" font-size="18" class="ink sans" text-anchor="start" font-weight="600">Tenant boundary: six layers</text>
+<text x="24" y="54" font-size="10" class="muted mono" text-anchor="start">Top to bottom: what each layer enforces, and which layer catches its bug. RLS fails closed.</text>
+<text x="112" y="96" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">LAYER</text>
+<text x="420" y="96" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">ENFORCES</text>
+<text x="712" y="96" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">IF THIS LAYER HAS A BUG</text>
+<rect x="96" y="108" width="848" height="64" class="row" stroke="none" stroke-width="1.2"/>
+<line x1="96" y1="172" x2="944" y2="172" class="s-rule" stroke-width="1"/>
+<rect x="112" y="122" width="24" height="14" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="124" y="132" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.08em">L1</text>
+<text x="152" y="135" font-size="13" class="ink sans" text-anchor="start" font-weight="600">Session</text>
+<text x="152" y="151" font-size="9" class="muted mono" text-anchor="start">requireTenant</text>
+<text x="420" y="135" font-size="11" class="ink sans" text-anchor="start">Tenant = the session&#x27;s active organization.</text>
+<text x="420" y="151" font-size="11" class="ink sans" text-anchor="start">Never read from body, query, header or args.</text>
+<text x="712" y="135" font-size="9" class="muted mono" text-anchor="start">wrong tenant chosen:</text>
+<text x="712" y="149" font-size="9" class="muted mono" text-anchor="start">L3-L6 cannot detect it</text>
+<rect x="96" y="172" width="848" height="64" class="row-alt" stroke="none" stroke-width="1.2"/>
+<line x1="96" y1="236" x2="944" y2="236" class="s-rule" stroke-width="1"/>
+<rect x="112" y="186" width="24" height="14" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="124" y="196" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.08em">L2</text>
+<text x="152" y="199" font-size="13" class="ink sans" text-anchor="start" font-weight="600">Membership re-check</text>
+<text x="152" y="215" font-size="9" class="muted mono" text-anchor="start">member row, every request</text>
+<text x="420" y="199" font-size="11" class="ink sans" text-anchor="start">Foreign or deleted organization: 403.</text>
+<text x="420" y="215" font-size="11" class="ink sans" text-anchor="start">No membership, no tenant context.</text>
+<text x="712" y="199" font-size="9" class="muted mono" text-anchor="start">same: L1-L2 decide which</text>
+<text x="712" y="213" font-size="9" class="muted mono" text-anchor="start">tenant; isolation tests cover it</text>
+<rect x="96" y="236" width="848" height="64" class="row" stroke="none" stroke-width="1.2"/>
+<line x1="96" y1="300" x2="944" y2="300" class="s-rule" stroke-width="1"/>
+<rect x="112" y="250" width="24" height="14" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="124" y="260" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.08em">L3</text>
+<text x="152" y="263" font-size="13" class="ink sans" text-anchor="start" font-weight="600">Closure-scoped tools</text>
+<text x="152" y="279" font-size="9" class="muted mono" text-anchor="start">ledgerTools(tenantId)</text>
+<text x="420" y="263" font-size="11" class="ink sans" text-anchor="start">Tenant bound in the factory closure.</text>
+<text x="420" y="279" font-size="11" class="ink sans" text-anchor="start">Strict args: tenant_id is a validation error.</text>
+<text x="712" y="263" font-size="9" class="muted mono" text-anchor="start">a tool skips the closure:</text>
+<text x="712" y="277" font-size="9" class="muted mono" text-anchor="start">L4 still binds the tenant</text>
+<rect x="96" y="300" width="848" height="64" class="row-alt" stroke="none" stroke-width="1.2"/>
+<line x1="96" y1="364" x2="944" y2="364" class="s-rule" stroke-width="1"/>
+<rect x="112" y="314" width="24" height="14" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="124" y="324" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.08em">L4</text>
+<text x="152" y="327" font-size="13" class="ink sans" text-anchor="start" font-weight="600">Repository WHERE</text>
+<text x="152" y="343" font-size="9" class="muted mono" text-anchor="start">tenant_id = $1</text>
+<text x="420" y="327" font-size="11" class="ink sans" text-anchor="start">One enforcement point for REST and tools.</text>
+<text x="420" y="343" font-size="11" class="ink sans" text-anchor="start">Every query also runs inside withTenant.</text>
+<text x="712" y="327" font-size="9" class="muted mono" text-anchor="start">a query omits the WHERE:</text>
+<text x="712" y="341" font-size="9" class="muted mono" text-anchor="start">L6 still filters the rows</text>
+<rect x="96" y="364" width="848" height="64" class="row" stroke="none" stroke-width="1.2"/>
+<rect x="112" y="378" width="24" height="14" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="124" y="388" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.08em">L5</text>
+<text x="152" y="391" font-size="13" class="ink sans" text-anchor="start" font-weight="600">DB role grants</text>
+<text x="152" y="407" font-size="9" class="muted mono" text-anchor="start">ledger_reader · ledger_app</text>
+<text x="420" y="391" font-size="11" class="ink sans" text-anchor="start">Reader: SELECT on transactions only.</text>
+<text x="420" y="407" font-size="11" class="ink sans" text-anchor="start">Boot refuses superuser or BYPASSRLS roles.</text>
+<text x="712" y="391" font-size="9" class="muted mono" text-anchor="start">grant drift: roles.test.ts</text>
+<text x="712" y="405" font-size="9" class="muted mono" text-anchor="start">fails CI; no write path exists</text>
+<rect x="96" y="428" width="848" height="64" class="focal" stroke-width="1.2"/>
+<rect x="112" y="442" width="24" height="14" rx="2" class="none s-acc" stroke-width="0.8"/>
+<text x="124" y="452" font-size="8" class="acc mono" text-anchor="middle" letter-spacing="0.08em">L6</text>
+<text x="152" y="455" font-size="13" class="ink sans" text-anchor="start" font-weight="600">Row-level security</text>
+<text x="152" y="471" font-size="9" class="acc mono" text-anchor="start">set_config(&#x27;app.tenant_id&#x27;)</text>
+<text x="420" y="455" font-size="11" class="ink sans" text-anchor="start">FORCE RLS on transactions and conversations.</text>
+<text x="420" y="471" font-size="11" class="ink sans" text-anchor="start">Unset context returns 0 rows.</text>
+<text x="712" y="455" font-size="9" class="muted mono" text-anchor="start">owner role bypasses RLS;</text>
+<text x="712" y="469" font-size="9" class="muted mono" text-anchor="start">used for migrations and seed only</text>
+<rect x="96" y="108" width="848" height="384" class="none s-muted" stroke-width="1"/>
+<path d="M 80 116 H 72 V 356 H 80" class="none s-muted" stroke-width="1"/>
+<text x="56" y="239.0" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.12em">APP</text>
+<path d="M 80 372 H 72 V 484 H 80" class="none s-muted" stroke-width="1"/>
+<text x="56" y="431.0" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.12em">DB</text>
+<rect x="96" y="516" width="848" height="64" rx="6" class="box2" stroke-width="1"/>
+<text x="112" y="534" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">RESIDUAL RISK</text>
+<text x="112" y="552" font-size="11" class="ink sans" text-anchor="start">L1-L2 choose the tenant; L3-L6 confine every query to it. A cross-tenant read needs a bug in the app layers</text>
+<text x="112" y="568" font-size="11" class="ink sans" text-anchor="start">(L3-L4) and in the database layers (L5-L6). Audit and auth tables have no RLS (ADR 0010).</text>
+<line x1="24" y1="596" x2="944" y2="596" class="s-rule" stroke-width="0.8"/>
+<text x="24" y="614" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">LEGEND</text>
+<rect x="96" y="604" width="26" height="12" rx="3" class="focal" stroke-width="1"/>
+<text x="130" y="614" font-size="9" class="muted mono" text-anchor="start">last line: fails closed when no tenant context is set</text>
+</svg>

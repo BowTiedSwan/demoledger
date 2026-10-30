@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968 624" width="968" height="624" role="img" aria-labelledby="data-model-title data-model-desc">
+<title id="data-model-title">Data model, roles and RLS</title>
+<desc id="data-model-desc">Entity diagram of organization (the tenant), user, member, session, transactions, the audit tables and the conversation tables, with each table&#x27;s database role access and which tables have forced row-level security.</desc>
+<style>
+.bg{fill:#f7f6f3}.mask{fill:#f7f6f3}.box{fill:#ffffff;stroke:#121212}.box2{fill:#ffffff;stroke:#8a8882}
+.focal{fill:#fbf2f3;stroke:#b3001b}.ink{fill:#121212}.muted{fill:#5c5c5c}.acc{fill:#b3001b}.lnk{fill:#146c2e}
+.s-muted{stroke:#5c5c5c}.s-acc{stroke:#b3001b}.s-lnk{stroke:#146c2e}.s-ink{stroke:#121212}.s-rule{stroke:#e2e0da}
+.s-tag{stroke:#8a8882}.life{stroke:#b9b7b1}.frame{fill:#f2f1ed;stroke:#c9c7c1}.act{fill:#e7e5e0;stroke:#5c5c5c}
+.row{fill:#ffffff}.row-alt{fill:#faf9f7}.none{fill:none}
+.sans{font-family:"Hedvig Letters Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){
+.bg{fill:#121212}.mask{fill:#121212}.box{fill:#1c1c1c;stroke:#fafafa}.box2{fill:#1c1c1c;stroke:#6b6b6b}
+.focal{fill:#2a1518;stroke:#ff7a8a}.ink{fill:#fafafa}.muted{fill:#a3a3a3}.acc{fill:#ff7a8a}.lnk{fill:#6fd08c}
+.s-muted{stroke:#a3a3a3}.s-acc{stroke:#ff7a8a}.s-lnk{stroke:#6fd08c}.s-ink{stroke:#fafafa}.s-rule{stroke:#2e2e2e}
+.s-tag{stroke:#6b6b6b}.life{stroke:#4a4a4a}.frame{fill:#171717;stroke:#3a3a3a}.act{fill:#262626;stroke:#a3a3a3}
+.row{fill:#1c1c1c}.row-alt{fill:#161616}
+}
+</style>
+<defs>
+<marker id="data-model-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="muted"/></marker>
+<marker id="data-model-arrow-acc" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="acc"/></marker>
+<marker id="data-model-arrow-lnk" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="lnk"/></marker>
+<marker id="data-model-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" class="none s-muted" stroke-width="1.2"/></marker>
+</defs>
+<rect width="100%" height="100%" class="bg"/>
+<text x="24" y="34" font-size="18" class="ink sans" text-anchor="start" font-weight="600">Data model, roles and RLS</text>
+<text x="24" y="54" font-size="10" class="muted mono" text-anchor="start">The API connects only as ledger_reader or ledger_app; the owner role runs migrations and the seed.</text>
+<line x1="264" y1="124" x2="364" y2="124" class="s-muted" stroke-width="1.2"/>
+<text x="276" y="118" font-size="9" class="muted mono" text-anchor="start">N</text>
+<text x="352" y="118" font-size="9" class="muted mono" text-anchor="end">1</text>
+<line x1="484.0" y1="194" x2="484.0" y2="244" class="s-muted" stroke-width="1.2"/>
+<text x="492.0" y="210" font-size="9" class="muted mono" text-anchor="start">1</text>
+<text x="492.0" y="236" font-size="9" class="muted mono" text-anchor="start">N</text>
+<line x1="484.0" y1="356" x2="484.0" y2="408" class="s-muted" stroke-width="1.2"/>
+<text x="492.0" y="372" font-size="9" class="muted mono" text-anchor="start">N</text>
+<text x="492.0" y="400" font-size="9" class="muted mono" text-anchor="start">1</text>
+<line x1="264" y1="440" x2="364" y2="440" class="s-muted" stroke-width="1.2"/>
+<text x="276" y="434" font-size="9" class="muted mono" text-anchor="start">N</text>
+<text x="352" y="434" font-size="9" class="muted mono" text-anchor="end">1</text>
+<line x1="704" y1="124" x2="604" y2="124" class="s-muted" stroke-width="1.2"/>
+<text x="692" y="118" font-size="9" class="muted mono" text-anchor="end">N</text>
+<text x="616" y="118" font-size="9" class="muted mono" text-anchor="start">1</text>
+<line x1="824.0" y1="194" x2="824.0" y2="244" class="s-muted" stroke-width="1.2"/>
+<text x="832.0" y="210" font-size="9" class="muted mono" text-anchor="start">1</text>
+<text x="832.0" y="236" font-size="9" class="muted mono" text-anchor="start">N</text>
+<path d="M 704 172 H 672 Q 664 172 664 180 V 468 Q 664 476 656 476 H 604" class="none s-muted" stroke-width="1.2"/>
+<text x="692" y="166" font-size="9" class="muted mono" text-anchor="end">N</text>
+<text x="616" y="470" font-size="9" class="muted mono" text-anchor="start">1</text>
+<rect x="24" y="96" width="240" height="112" rx="6" class="mask"/>
+<rect x="24" y="96" width="240" height="112" rx="6" class="box" stroke-width="1"/>
+<rect x="32" y="104" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="50.019999999999996" y="113" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+<text x="76.03999999999999" y="115" font-size="13" class="ink sans" text-anchor="start" font-weight="600">session</text>
+<text x="32" y="132" font-size="9" class="muted mono" text-anchor="start">ledger_app: full DML · no RLS</text>
+<line x1="24" y1="140" x2="264" y2="140" class="s-rule" stroke-width="1"/>
+<text x="32" y="156" font-size="9" class="ink mono" text-anchor="start"># id</text>
+<text x="32" y="170" font-size="9" class="ink mono" text-anchor="start">→ user_id</text>
+<text x="32" y="184" font-size="9" class="ink mono" text-anchor="start">active_organization_id</text>
+<text x="32" y="198" font-size="9" class="ink mono" text-anchor="start">token (signed bearer)</text>
+<rect x="364" y="96" width="240" height="98" rx="6" class="mask"/>
+<rect x="364" y="96" width="240" height="98" rx="6" class="box" stroke-width="1"/>
+<rect x="372" y="104" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="390.02" y="113" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+<text x="416.04" y="115" font-size="13" class="ink sans" text-anchor="start" font-weight="600">user</text>
+<text x="372" y="132" font-size="9" class="muted mono" text-anchor="start">ledger_app: full DML · no RLS</text>
+<line x1="364" y1="140" x2="604" y2="140" class="s-rule" stroke-width="1"/>
+<text x="372" y="156" font-size="9" class="ink mono" text-anchor="start"># id</text>
+<text x="372" y="170" font-size="9" class="ink mono" text-anchor="start">email</text>
+<text x="372" y="184" font-size="9" class="ink mono" text-anchor="start">name</text>
+<rect x="364" y="244" width="240" height="112" rx="6" class="mask"/>
+<rect x="364" y="244" width="240" height="112" rx="6" class="box" stroke-width="1"/>
+<rect x="372" y="252" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="390.02" y="261" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+<text x="416.04" y="263" font-size="13" class="ink sans" text-anchor="start" font-weight="600">member</text>
+<text x="372" y="280" font-size="9" class="muted mono" text-anchor="start">ledger_app: full DML · no RLS</text>
+<line x1="364" y1="288" x2="604" y2="288" class="s-rule" stroke-width="1"/>
+<text x="372" y="304" font-size="9" class="ink mono" text-anchor="start"># id</text>
+<text x="372" y="318" font-size="9" class="ink mono" text-anchor="start">→ organization_id</text>
+<text x="372" y="332" font-size="9" class="ink mono" text-anchor="start">→ user_id</text>
+<text x="372" y="346" font-size="9" class="ink mono" text-anchor="start">role</text>
+<rect x="364" y="408" width="240" height="98" rx="6" class="mask"/>
+<rect x="364" y="408" width="240" height="98" rx="6" class="focal" stroke-width="1"/>
+<rect x="372" y="416" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="390.02" y="425" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">TENANT</text>
+<text x="416.04" y="427" font-size="13" class="ink sans" text-anchor="start" font-weight="600">organization</text>
+<text x="372" y="444" font-size="9" class="muted mono" text-anchor="start">ledger_app: full DML · no RLS</text>
+<line x1="364" y1="452" x2="604" y2="452" class="s-rule" stroke-width="1"/>
+<text x="372" y="468" font-size="9" class="ink mono" text-anchor="start"># id  (= tenant_id)</text>
+<text x="372" y="482" font-size="9" class="ink mono" text-anchor="start">name</text>
+<text x="372" y="496" font-size="9" class="ink mono" text-anchor="start">slug</text>
+<rect x="24" y="408" width="240" height="140" rx="6" class="mask"/>
+<rect x="24" y="408" width="240" height="140" rx="6" class="box" stroke-width="1"/>
+<rect x="32" y="416" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="50.019999999999996" y="425" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+<text x="76.03999999999999" y="427" font-size="13" class="ink sans" text-anchor="start" font-weight="600">transactions</text>
+<rect x="224" y="416" width="32" height="12" rx="2" class="none s-ink" stroke-width="0.8"/>
+<text x="240" y="425" font-size="7" class="ink mono" text-anchor="middle" letter-spacing="0.08em">RLS</text>
+<text x="32" y="444" font-size="9" class="muted mono" text-anchor="start">ledger_reader: SELECT only</text>
+<line x1="24" y1="452" x2="264" y2="452" class="s-rule" stroke-width="1"/>
+<text x="32" y="468" font-size="9" class="ink mono" text-anchor="start"># transaction_id</text>
+<text x="32" y="482" font-size="9" class="ink mono" text-anchor="start">→ tenant_id</text>
+<text x="32" y="496" font-size="9" class="ink mono" text-anchor="start">wallet_id · currency</text>
+<text x="32" y="510" font-size="9" class="ink mono" text-anchor="start">amount_minor (bigint)</text>
+<text x="32" y="524" font-size="9" class="ink mono" text-anchor="start">direction · status</text>
+<text x="32" y="538" font-size="9" class="ink mono" text-anchor="start">failure_reason (null = not recorded)</text>
+<rect x="24" y="244" width="240" height="112" rx="6" class="mask"/>
+<rect x="24" y="244" width="240" height="112" rx="6" class="box2" stroke-width="1" stroke-dasharray="5,4"/>
+<rect x="32" y="252" width="31.7" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="47.85" y="261" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">AUDIT</text>
+<text x="71.7" y="263" font-size="13" class="ink sans" text-anchor="start" font-weight="600">ai_requests · ai_tool_calls</text>
+<text x="32" y="280" font-size="9" class="muted mono" text-anchor="start">ledger_app: INSERT only</text>
+<line x1="24" y1="288" x2="264" y2="288" class="s-rule" stroke-width="1"/>
+<text x="32" y="304" font-size="9" class="ink mono" text-anchor="start">request_id · tenant_id · user_id</text>
+<text x="32" y="318" font-size="9" class="ink mono" text-anchor="start">status · guard_verdict</text>
+<text x="32" y="332" font-size="9" class="ink mono" text-anchor="start">cited_ids · ungrounded_ids</text>
+<text x="32" y="346" font-size="9" class="ink mono" text-anchor="start">tool_name · raw_args · validated</text>
+<rect x="704" y="96" width="240" height="98" rx="6" class="mask"/>
+<rect x="704" y="96" width="240" height="98" rx="6" class="box" stroke-width="1"/>
+<rect x="712" y="104" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="730.02" y="113" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+<text x="756.04" y="115" font-size="13" class="ink sans" text-anchor="start" font-weight="600">ai_conversations</text>
+<rect x="904" y="104" width="32" height="12" rx="2" class="none s-ink" stroke-width="0.8"/>
+<text x="920" y="113" font-size="7" class="ink mono" text-anchor="middle" letter-spacing="0.08em">RLS</text>
+<text x="712" y="132" font-size="9" class="muted mono" text-anchor="start">ledger_app: SELECT, INSERT</text>
+<line x1="704" y1="140" x2="944" y2="140" class="s-rule" stroke-width="1"/>
+<text x="712" y="156" font-size="9" class="ink mono" text-anchor="start"># id (client UUID)</text>
+<text x="712" y="170" font-size="9" class="ink mono" text-anchor="start">→ tenant_id</text>
+<text x="712" y="184" font-size="9" class="ink mono" text-anchor="start">→ user_id</text>
+<rect x="704" y="244" width="240" height="112" rx="6" class="mask"/>
+<rect x="704" y="244" width="240" height="112" rx="6" class="box" stroke-width="1"/>
+<rect x="712" y="252" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="730.02" y="261" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+<text x="756.04" y="263" font-size="13" class="ink sans" text-anchor="start" font-weight="600">ai_messages</text>
+<rect x="904" y="252" width="32" height="12" rx="2" class="none s-ink" stroke-width="0.8"/>
+<text x="920" y="261" font-size="7" class="ink mono" text-anchor="middle" letter-spacing="0.08em">RLS</text>
+<text x="712" y="280" font-size="9" class="muted mono" text-anchor="start">ledger_app: SELECT, INSERT</text>
+<line x1="704" y1="288" x2="944" y2="288" class="s-rule" stroke-width="1"/>
+<text x="712" y="304" font-size="9" class="ink mono" text-anchor="start"># id</text>
+<text x="712" y="318" font-size="9" class="ink mono" text-anchor="start">→ conversation_id</text>
+<text x="712" y="332" font-size="9" class="ink mono" text-anchor="start">tenant_id · user_id</text>
+<text x="712" y="346" font-size="9" class="ink mono" text-anchor="start">role · content · request_id</text>
+<text x="704" y="384" font-size="9" class="muted mono" text-anchor="start">Conversation and message reads and writes</text>
+<text x="704" y="398" font-size="9" class="muted mono" text-anchor="start">set app.tenant_id and app.user_id in the</text>
+<text x="704" y="412" font-size="9" class="muted mono" text-anchor="start">same transaction (withTenantUser).</text>
+<text x="24" y="376" font-size="9" class="muted mono" text-anchor="start">No foreign keys: rows join on request_id.</text>
+<line x1="24" y1="580" x2="944" y2="580" class="s-rule" stroke-width="0.8"/>
+<text x="24" y="598" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">LEGEND</text>
+<rect x="96" y="588" width="26" height="12" rx="3" class="focal" stroke-width="1"/>
+<text x="130" y="598" font-size="9" class="muted mono" text-anchor="start">the tenant</text>
+<rect x="213.8" y="588" width="26" height="12" rx="3" class="box2" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="247.8" y="598" font-size="9" class="muted mono" text-anchor="start">append-only, no FKs</text>
+<line x1="381.82" y1="594" x2="407.82" y2="594" class="s-muted" stroke-width="1.2"/>
+<text x="415.82" y="598" font-size="9" class="muted mono" text-anchor="start">foreign key, N to 1</text>
+<rect x="549.8399999999999" y="588" width="26" height="12" rx="2" class="none s-ink" stroke-width="0.8"/><text x="562.8399999999999" y="597" font-size="7" class="ink mono" text-anchor="middle">RLS</text>
+<text x="583.8399999999999" y="598" font-size="9" class="muted mono" text-anchor="start">FORCE row-level security</text>
+</svg>

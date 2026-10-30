@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968 904" width="968" height="904" role="img" aria-labelledby="ask-request-path-title ask-request-path-desc">
+<title id="ask-request-path-title">/api/ask request path</title>
+<desc id="ask-request-path-desc">Sequence of one assistant question: API middleware establishes the tenant, the guard and stored history run first, the model calls tenant-scoped tools against Postgres under RLS, the answer is checked, streamed to the browser and audited.</desc>
+<style>
+.bg{fill:#f7f6f3}.mask{fill:#f7f6f3}.box{fill:#ffffff;stroke:#121212}.box2{fill:#ffffff;stroke:#8a8882}
+.focal{fill:#fbf2f3;stroke:#b3001b}.ink{fill:#121212}.muted{fill:#5c5c5c}.acc{fill:#b3001b}.lnk{fill:#146c2e}
+.s-muted{stroke:#5c5c5c}.s-acc{stroke:#b3001b}.s-lnk{stroke:#146c2e}.s-ink{stroke:#121212}.s-rule{stroke:#e2e0da}
+.s-tag{stroke:#8a8882}.life{stroke:#b9b7b1}.frame{fill:#f2f1ed;stroke:#c9c7c1}.act{fill:#e7e5e0;stroke:#5c5c5c}
+.row{fill:#ffffff}.row-alt{fill:#faf9f7}.none{fill:none}
+.sans{font-family:"Hedvig Letters Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){
+.bg{fill:#121212}.mask{fill:#121212}.box{fill:#1c1c1c;stroke:#fafafa}.box2{fill:#1c1c1c;stroke:#6b6b6b}
+.focal{fill:#2a1518;stroke:#ff7a8a}.ink{fill:#fafafa}.muted{fill:#a3a3a3}.acc{fill:#ff7a8a}.lnk{fill:#6fd08c}
+.s-muted{stroke:#a3a3a3}.s-acc{stroke:#ff7a8a}.s-lnk{stroke:#6fd08c}.s-ink{stroke:#fafafa}.s-rule{stroke:#2e2e2e}
+.s-tag{stroke:#6b6b6b}.life{stroke:#4a4a4a}.frame{fill:#171717;stroke:#3a3a3a}.act{fill:#262626;stroke:#a3a3a3}
+.row{fill:#1c1c1c}.row-alt{fill:#161616}
+}
+</style>
+<defs>
+<marker id="ask-request-path-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="muted"/></marker>
+<marker id="ask-request-path-arrow-acc" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="acc"/></marker>
+<marker id="ask-request-path-arrow-lnk" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="lnk"/></marker>
+<marker id="ask-request-path-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" class="none s-muted" stroke-width="1.2"/></marker>
+</defs>
+<rect width="100%" height="100%" class="bg"/>
+<text x="24" y="34" font-size="18" class="ink sans" text-anchor="start" font-weight="600">/api/ask request path</text>
+<text x="24" y="54" font-size="10" class="muted mono" text-anchor="start">One question, from the browser to a grounded, audited answer. Tenant comes only from the session.</text>
+<rect x="428" y="436" width="464" height="228" rx="4" class="frame" stroke-width="1"/>
+<rect x="428" y="436" width="40" height="16" rx="2" class="mask s-tag" stroke-width="1"/>
+<text x="448" y="448" font-size="8" class="muted mono" text-anchor="middle" letter-spacing="0.12em">LOOP</text>
+<text x="880" y="448" font-size="9" class="muted mono" text-anchor="end">[ ≤ 5 steps; the last has no tools ]</text>
+<line x1="100" y1="124" x2="100" y2="840" class="life" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="292" y1="124" x2="292" y2="840" class="life" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="484" y1="124" x2="484" y2="840" class="life" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="676" y1="124" x2="676" y2="840" class="life" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="868" y1="124" x2="868" y2="840" class="life" stroke-width="1" stroke-dasharray="3,3"/>
+<rect x="288" y="156" width="8" height="136" class="act" stroke-width="0.8"/>
+<rect x="480" y="292" width="8" height="500" class="act" stroke-width="0.8"/>
+<rect x="864" y="480" width="8" height="160" class="act" stroke-width="0.8"/>
+<rect x="672" y="548" width="8" height="56" class="act" stroke-width="0.8"/>
+<rect x="672" y="792" width="8" height="16" class="act" stroke-width="0.8"/>
+<line x1="104" y1="156" x2="288" y2="156" class="s-lnk" stroke-width="1.2" marker-end="url(#ask-request-path-arrow-lnk)"/>
+<rect x="155.7" y="136" width="80.5" height="12" rx="2" class="mask"/><text x="196.0" y="145" font-size="9" class="lnk mono" text-anchor="middle" letter-spacing="0.06em">POST /API/ASK</text>
+<path d="M 296 172 H 312 Q 320 172 320 180 V 188 Q 320 196 312 196 H 298" class="none s-muted" stroke-width="1.2" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="326" y="178" width="63.8" height="12" rx="2" class="mask"/>
+<text x="330" y="187" font-size="9" class="ink mono" text-anchor="start" letter-spacing="0.06em">MIDDLEWARE</text>
+<text x="330" y="206" font-size="9" class="muted mono" text-anchor="start">requestId · no-store</text>
+<text x="330" y="218" font-size="9" class="muted mono" text-anchor="start">requireTenant: session</text>
+<text x="330" y="230" font-size="9" class="muted mono" text-anchor="start"> + member re-check</text>
+<text x="330" y="242" font-size="9" class="muted mono" text-anchor="start">CSRF origin · rate limit</text>
+<text x="330" y="254" font-size="9" class="muted mono" text-anchor="start">body limit · zod schema</text>
+<line x1="296" y1="292" x2="480" y2="292" class="s-muted" stroke-width="1.2" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="358.9" y="272" width="58.2" height="12" rx="2" class="mask"/><text x="388.0" y="281" font-size="9" class="muted mono" text-anchor="middle" letter-spacing="0.06em">HANDLEASK</text>
+<text x="308" y="308" font-size="9" class="muted mono" text-anchor="start">tenant = c.get(&#x27;tenant&#x27;)</text>
+<path d="M 488 324 H 504 Q 512 324 512 332 V 340 Q 512 348 504 348 H 490" class="none s-muted" stroke-width="1.2" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="518" y="330" width="86.1" height="12" rx="2" class="mask"/>
+<text x="522" y="339" font-size="9" class="ink mono" text-anchor="start" letter-spacing="0.06em">GUARD, HISTORY</text>
+<text x="522" y="358" font-size="9" class="muted mono" text-anchor="start">ensure conversation:</text>
+<text x="522" y="370" font-size="9" class="muted mono" text-anchor="start"> foreign id = 404</text>
+<text x="522" y="382" font-size="9" class="muted mono" text-anchor="start">guard: block = refusal,</text>
+<text x="522" y="394" font-size="9" class="muted mono" text-anchor="start"> no model call</text>
+<text x="522" y="406" font-size="9" class="muted mono" text-anchor="start">load last 3 stored pairs</text>
+<line x1="488" y1="480" x2="864" y2="480" class="s-lnk" stroke-width="1.2" marker-end="url(#ask-request-path-arrow-lnk)"/>
+<rect x="740.1" y="460" width="63.8" height="12" rx="2" class="mask"/><text x="772" y="469" font-size="9" class="lnk mono" text-anchor="middle" letter-spacing="0.06em">MODEL STEP</text>
+<line x1="864" y1="512" x2="488" y2="512" class="s-muted" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="742.9" y="492" width="58.2" height="12" rx="2" class="mask"/><text x="772" y="501" font-size="9" class="muted mono" text-anchor="middle" letter-spacing="0.06em">TOOL CALL</text>
+<line x1="488" y1="548" x2="672" y2="548" class="s-muted" stroke-width="1.2" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="536.9" y="528" width="86.1" height="12" rx="2" class="mask"/><text x="580.0" y="537" font-size="9" class="muted mono" text-anchor="middle" letter-spacing="0.06em">WITHTENANT SQL</text>
+<text x="500" y="564" font-size="9" class="muted mono" text-anchor="start">strict args · closure tenant</text>
+<line x1="672" y1="604" x2="488" y2="604" class="s-muted" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="553.7" y="584" width="52.6" height="12" rx="2" class="mask"/><text x="580.0" y="593" font-size="9" class="muted mono" text-anchor="middle" letter-spacing="0.06em">RLS ROWS</text>
+<line x1="864" y1="640" x2="488" y2="640" class="s-muted" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="737.3" y="620" width="69.4" height="12" rx="2" class="mask"/><text x="772" y="629" font-size="9" class="muted mono" text-anchor="middle" letter-spacing="0.06em">ANSWER TEXT</text>
+<path d="M 488 684 H 504 Q 512 684 512 692 V 700 Q 512 708 504 708 H 490" class="none s-muted" stroke-width="1.2" marker-end="url(#ask-request-path-arrow)"/>
+<rect x="518" y="690" width="41.5" height="12" rx="2" class="mask"/>
+<text x="522" y="699" font-size="9" class="ink mono" text-anchor="start" letter-spacing="0.06em">CHECKS</text>
+<text x="522" y="718" font-size="9" class="muted mono" text-anchor="start">grounding · counts</text>
+<text x="522" y="730" font-size="9" class="muted mono" text-anchor="start">facts · speculation</text>
+<text x="522" y="742" font-size="9" class="muted mono" text-anchor="start">warn only, never edit</text>
+<line x1="480" y1="772" x2="104" y2="772" class="s-acc" stroke-width="1.6" marker-end="url(#ask-request-path-arrow-acc)"/>
+<rect x="166.9" y="752" width="58.2" height="12" rx="2" class="mask"/><text x="196" y="761" font-size="9" class="acc mono" text-anchor="middle" letter-spacing="0.06em">UI STREAM</text>
+<text x="116" y="788" font-size="9" class="muted mono" text-anchor="start">text · tools · data-visual</text>
+<line x1="488" y1="792" x2="672" y2="792" class="s-muted" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ask-request-path-arrow-open)"/>
+<rect x="542.5" y="772" width="75.0" height="12" rx="2" class="mask"/><text x="580.0" y="781" font-size="9" class="muted mono" text-anchor="middle" letter-spacing="0.06em">AUDIT + PAIR</text>
+<text x="500" y="808" font-size="9" class="muted mono" text-anchor="start">ai_requests · ai_tool_calls</text>
+<text x="500" y="820" font-size="9" class="muted mono" text-anchor="start">ai_messages if ok</text>
+<rect x="20" y="72" width="160" height="52" rx="6" class="mask"/>
+<rect x="20" y="72" width="160" height="52" rx="6" class="box" stroke-width="1"/>
+<rect x="28" y="78" width="36.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="46.019999999999996" y="87" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">CLIENT</text>
+<text x="100.0" y="104" font-size="13" class="ink sans" text-anchor="middle" font-weight="600">Browser</text>
+<text x="100.0" y="118" font-size="9" class="muted mono" text-anchor="middle">SPA · session cookie</text>
+<rect x="212" y="72" width="160" height="52" rx="6" class="mask"/>
+<rect x="212" y="72" width="160" height="52" rx="6" class="box" stroke-width="1"/>
+<rect x="220" y="78" width="23.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="231.51" y="87" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">API</text>
+<text x="292.0" y="104" font-size="13" class="ink sans" text-anchor="middle" font-weight="600">API middleware</text>
+<text x="292.0" y="118" font-size="9" class="muted mono" text-anchor="middle">Hono · createApp</text>
+<rect x="404" y="72" width="160" height="52" rx="6" class="mask"/>
+<rect x="404" y="72" width="160" height="52" rx="6" class="focal" stroke-width="1"/>
+<rect x="412" y="78" width="27.4" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="425.68" y="87" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+<text x="484.0" y="104" font-size="13" class="ink sans" text-anchor="middle" font-weight="600">handleAsk</text>
+<text x="484.0" y="118" font-size="9" class="muted mono" text-anchor="middle">orchestrator + guard</text>
+<rect x="596" y="72" width="160" height="52" rx="6" class="mask"/>
+<rect x="596" y="72" width="160" height="52" rx="6" class="box" stroke-width="1"/>
+<rect x="604" y="78" width="18.7" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="613.34" y="87" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">DB</text>
+<text x="676.0" y="104" font-size="13" class="ink sans" text-anchor="middle" font-weight="600">Postgres</text>
+<text x="676.0" y="118" font-size="9" class="muted mono" text-anchor="middle">ledger_reader · RLS</text>
+<rect x="788" y="72" width="160" height="52" rx="6" class="mask"/>
+<rect x="788" y="72" width="160" height="52" rx="6" class="box" stroke-width="1"/>
+<rect x="796" y="78" width="23.0" height="12" rx="2" class="none s-tag" stroke-width="0.8"/>
+<text x="807.51" y="87" font-size="7" class="muted mono" text-anchor="middle" letter-spacing="0.08em">LLM</text>
+<text x="868.0" y="104" font-size="13" class="ink sans" text-anchor="middle" font-weight="600">Model</text>
+<text x="868.0" y="118" font-size="9" class="muted mono" text-anchor="middle">Workers AI · Gemma</text>
+<line x1="24" y1="860" x2="944" y2="860" class="s-rule" stroke-width="0.8"/>
+<text x="24" y="878" font-size="8" class="muted mono" text-anchor="start" letter-spacing="0.14em">LEGEND</text>
+<line x1="96" y1="874" x2="122" y2="874" class="s-lnk" stroke-width="1.2" marker-end="url(#ask-request-path-arrow-lnk)"/>
+<text x="130" y="878" font-size="9" class="muted mono" text-anchor="start">HTTP / model call</text>
+<line x1="252.86" y1="874" x2="278.86" y2="874" class="s-muted" stroke-width="1.2" marker-end="url(#ask-request-path-arrow)"/>
+<text x="286.86" y="878" font-size="9" class="muted mono" text-anchor="start">internal call</text>
+<line x1="387.40000000000003" y1="874" x2="413.40000000000003" y2="874" class="s-muted" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ask-request-path-arrow)"/>
+<text x="421.40000000000003" y="878" font-size="9" class="muted mono" text-anchor="start">return</text>
+<line x1="482.88" y1="874" x2="508.88" y2="874" class="s-muted" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ask-request-path-arrow-open)"/>
+<text x="516.88" y="878" font-size="9" class="muted mono" text-anchor="start">async write</text>
+<line x1="606.26" y1="874" x2="632.26" y2="874" class="s-acc" stroke-width="1.2" marker-end="url(#ask-request-path-arrow-acc)"/>
+<text x="640.26" y="878" font-size="9" class="muted mono" text-anchor="start">answer to the user</text>
+</svg>

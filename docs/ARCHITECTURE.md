@@ -2,34 +2,13 @@
 
 ## Request path
 
-```
-Browser (SPA :5173)                    curl / scripts
-  │ httpOnly session cookie              │ Authorization: Bearer <set-auth-token>
-  └──── same origin via Vite /api proxy ─┴──────────────▶ API (Hono on Node :3001)
-                                                            │
-  requestId → secureHeaders → JSON request log              │
-  /api/auth/*  ─────────────────────────────────────────▶ Better Auth (ledger_app pool)
-  /api/me, /api/transactions*, /api/ask:                    │
-    requireTenant: session → activeOrganizationId → member re-check → c.set('tenant')
-  /api/transactions*: zod (shared, strict) → repo(tenantId, filter) ─────▶ ledger_reader pool
-  /api/ask: CSRF origin (cookie only) → per-user rate limit → body limit → zod
-    → handleAsk
-        0. conversation: ensure(conversationId, user, tenant) → 404 if it belongs to someone else;
-           load the last 3 stored answered pairs (answers clipped to 2000 chars)       ──▶ ledger_app pool
-        1. guard (Clef-flash + heuristic, 2.5 s; on Clef error the heuristic still applies) ── block → fixed refusal
-        2. streamText (Workers AI gemma-4-26b-a4b-it, ≤5 steps, ≤2048 output tokens/step, retries 2, 45 s request budget, 15 s first-chunk wait per step)
-             ↳ data tools: search_transactions | aggregate_transactions
-                 strict zod on raw args → repo(tenantId from closure) → <untrusted_tool_data>
-             ↳ presentational tool: present_visual {kind, source, title}  (no DB access)
-                 buildVisualSpec(this request's latest aggregate/search) → data-visual {id, spec}
-        3. grounding check: every TXN-… in the answer ∈ this request's tool results?
-        4. audit: ai_tool_calls rows + one ai_requests row (ledger_app, INSERT only);
-           if ok/no_results: append the question/answer pair to ai_messages
-    ← UI message stream: text, tool parts, source-url parts, data-visual (json-render spec), data-guard / data-ungrounded / data-error
-PostgreSQL 17: transactions, Better Auth tables, ai_requests, ai_tool_calls, ai_conversations, ai_messages
-```
+![/api/ask request path: middleware, guard, model and tool loop under RLS, answer checks, stream and audit](diagrams/ask-request-path.svg)
 
-Code map: `apps/api/src/app.ts` (routes, middleware order), `middleware/require-tenant.ts`, `repo/transactions.ts`, `tools/`, `guard/`, `orchestrator/`, `audit/`, and `packages/db/src/roles.sql`. `REPO_MAP.md` lists every file.
+Text twin: [`diagrams/ask-request-path.md`](diagrams/ask-request-path.md). Browsers send the httpOnly session cookie through the same-origin Vite `/api` proxy; scripts send `Authorization: Bearer <set-auth-token>`. REST lookups (`/api/transactions*`) take the same path up to the repository, without the guard or the model.
+
+Budgets on the path: guard 2.5 s (`GUARD_TIMEOUT_MS`; on a Clef error the heuristic still applies); model `@cf/google/gemma-4-26b-a4b-it`, at most 5 steps and 2048 output tokens per step, 2 retries, a 45 s request budget and a 15 s first-chunk wait per step; stored history is the last 3 answered pairs, with answers clipped to 2000 characters. The stream carries text, tool parts, `source-url` parts, `data-visual` (a json-render spec) and `data-guard` / `data-ungrounded` / `data-error` parts.
+
+Code map: `apps/api/src/app.ts` (routes, middleware order), `middleware/require-tenant.ts`, `repo/transactions.ts`, `tools/`, `guard/`, `orchestrator/`, `audit/`, and `packages/db/src/roles.sql`. `REPO_MAP.md` maps every module and lists the routes, tools and tables.
 
 ## Visual path (generative UI, ADR 0009)
 
@@ -46,6 +25,10 @@ Code map: `apps/api/src/app.ts` (routes, middleware order), `middleware/require-
 The answer text still goes through every answer check. A mismatched request, such as a chart from a search or a sum chart over a count aggregate, gets a structured refusal with guidance.
 
 ## Data model
+
+![Data model: organization (the tenant), auth tables, transactions, audit and conversation tables, with role access and RLS](diagrams/data-model.svg)
+
+Text twin: [`diagrams/data-model.md`](diagrams/data-model.md).
 
 | Table | Holds | Access |
 |---|---|---|
@@ -73,7 +56,11 @@ The answer text still goes through every answer check. A mismatched request, suc
   - **Bearer tokens must be the signed `set-auth-token` value.** Raw session tokens are rejected with 401 (`requireSignature`, OWASP-03).
   - At boot, both pools must run as `ledger_reader` / `ledger_app`, with `rolsuper` and `rolbypassrls` false; otherwise the API refuses to start (F-30, T-270).
 
-## Tenant boundaries (defense layers, strongest first)
+## Tenant boundaries (defense layers)
+
+![Tenant boundary: six layers from the session to row-level security, with what catches each layer's bug](diagrams/tenant-boundary-layers.svg)
+
+Text twin: [`diagrams/tenant-boundary-layers.md`](diagrams/tenant-boundary-layers.md). The numbered list below groups the same six layers into four.
 
 1. **The tenant comes only from the session.** `TransactionFilter` has no tenant field; REST query schemas are strict (`?tenant_id=` → 400); the tools get `tenantId` from the factory closure, and their strict arg schemas reject `tenant_id`.
 2. **One repository, tenant first.** `listTransactions(tenantId, …)` / `aggregateTransactions(tenantId, …)` always bind `tenant_id = $1`, including the follow-up filter `transaction_ids` (`transaction_id = ANY(…) AND tenant_id = $1`). Conversations are also keyed by tenant and user: a foreign `conversationId` is a 404. REST and AI tools share them, so there is one enforcement point.
