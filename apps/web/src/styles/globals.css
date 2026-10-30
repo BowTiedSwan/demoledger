@@ -50,6 +50,8 @@
   --chart-axis: #5c5c5c;
 
   --radius: 0.5rem;
+  /* One height for every form control (inputs, selects, buttons): meets the 44px target rule. */
+  --control-height: 2.75rem;
   --spacing-unit: 8px;
   --ease: ease;
 }

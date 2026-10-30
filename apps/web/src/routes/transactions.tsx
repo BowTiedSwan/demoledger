@@ -161,58 +161,55 @@ function Filters(props: {
 
   return (
     <form
-      className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+      className="flex flex-col gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         applyWallet();
       }}
       aria-label="Filter transactions"
     >
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={walletInputId}>Wallet</Label>
-        <Input
-          id={walletInputId}
-          value={walletText}
-          onChange={(e) => setWalletText(e.target.value)}
-          onBlur={applyWallet}
-          placeholder="Wallet ID, e.g. WALLET-…"
-          className="font-mono"
-          aria-invalid={walletError ? true : undefined}
-          aria-describedby={walletError ? walletErrorId : undefined}
-          autoComplete="off"
+      {/* One row, bottom-aligned; every control shares --control-height and the sans font. */}
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex min-w-48 flex-[2] flex-col gap-2">
+          <Label htmlFor={walletInputId}>Wallet</Label>
+          <Input
+            id={walletInputId}
+            value={walletText}
+            onChange={(e) => setWalletText(e.target.value)}
+            onBlur={applyWallet}
+            placeholder="Wallet ID, e.g. WALLET-…"
+            aria-invalid={walletError ? true : undefined}
+            aria-describedby={walletError ? walletErrorId : undefined}
+            autoComplete="off"
+          />
+        </div>
+        <FilterSelect
+          label="Status"
+          value={props.status}
+          options={STATUS_OPTIONS.map((s) => ({ value: s, label: capitalize(s) }))}
+          onChange={(v) => props.onChange({ status: v as TransactionStatus | undefined })}
         />
-        {walletError ? (
-          <p id={walletErrorId} className="text-sm text-destructive">
-            {walletError}
-          </p>
-        ) : null}
-      </div>
-      <FilterSelect
-        label="Status"
-        value={props.status}
-        options={STATUS_OPTIONS.map((s) => ({ value: s, label: capitalize(s) }))}
-        onChange={(v) => props.onChange({ status: v as TransactionStatus | undefined })}
-      />
-      <FilterSelect
-        label="Direction"
-        value={props.direction}
-        options={DIRECTIONS.map((d) => ({ value: d, label: capitalize(d) }))}
-        onChange={(v) => props.onChange({ direction: v as Direction | undefined })}
-      />
-      <FilterSelect
-        label="Period"
-        value={props.period}
-        options={PERIOD_OPTIONS.map((p) => ({ value: p, label: PERIOD_LABELS[p] }))}
-        onChange={(v) => props.onChange({ period: v as Period | undefined })}
-      />
-      <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
-        <span className="hidden text-sm font-medium lg:block" aria-hidden>
-          &nbsp;
-        </span>
+        <FilterSelect
+          label="Direction"
+          value={props.direction}
+          options={DIRECTIONS.map((d) => ({ value: d, label: capitalize(d) }))}
+          onChange={(v) => props.onChange({ direction: v as Direction | undefined })}
+        />
+        <FilterSelect
+          label="Period"
+          value={props.period}
+          options={PERIOD_OPTIONS.map((p) => ({ value: p, label: PERIOD_LABELS[p] }))}
+          onChange={(v) => props.onChange({ period: v as Period | undefined })}
+        />
         <Button type="button" variant="outline" onClick={props.onClear} disabled={!props.hasFilters}>
           Clear filters
         </Button>
       </div>
+      {walletError ? (
+        <p id={walletErrorId} className="text-sm text-destructive">
+          {walletError}
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -230,7 +227,7 @@ function FilterSelect({
 }) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-36 flex-1 flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
       <Select value={value ?? ALL} onValueChange={(v) => onChange(v === ALL ? undefined : v)}>
         <SelectTrigger id={id} className="w-full">

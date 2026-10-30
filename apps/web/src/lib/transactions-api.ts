@@ -9,7 +9,7 @@ import {
 } from '@demoledger/shared';
 import { api } from './api';
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 10;
 
 export interface TransactionFilters {
   id?: string | undefined;
