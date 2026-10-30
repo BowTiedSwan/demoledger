@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+
+# env and secrets
+.env
+.env.*
+!.env.example
+
+# build / tool output
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+apps/web/src/routeTree.gen.ts.bak
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# local agent tooling state
+.omc/
+
+# eval run outputs
+evals/results/
+
+# build inputs kept outside the submission (read during the build, never committed)
+/design.md
+/codebase-agents-best-practices-2026-09-07.md

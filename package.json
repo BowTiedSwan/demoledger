@@ -1,0 +1,34 @@
+{
+  "name": "demoledger",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,magenta \"pnpm --filter @demoledger/api dev\" \"pnpm --filter @demoledger/web dev\"",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @demoledger/db db:migrate",
+    "db:seed": "pnpm --filter @demoledger/db db:seed",
+    "db:reset": "pnpm --filter @demoledger/db db:reset",
+    "typecheck": "tsc -p tsconfig.json && pnpm -r --parallel typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke:live": "pnpm --filter @demoledger/api smoke:live",
+    "eval:guard": "pnpm --filter @demoledger/evals eval:guard",
+    "eval:llm": "pnpm --filter @demoledger/evals eval:llm",
+    "repo-map": "tsx scripts/repo-map.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@types/node": "24.19.2",
+    "concurrently": "10.0.6",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

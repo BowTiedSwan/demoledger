@@ -1,0 +1,6 @@
+{
+  // Root-level TS files only (test config, scripts). Packages have their own tsconfig.json.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "types": ["node"] },
+  "include": ["vitest.shared.ts", "vitest.config.ts", "scripts"]
+}
