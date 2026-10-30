@@ -1,0 +1,258 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource/hedvig-letters-sans/latin-400.css";
+
+@source "../../node_modules/streamdown/dist/*.js";
+@source "../../node_modules/@streamdown/code/dist/*.js";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * DemoLedger design tokens: calm, near-monochrome with warm neutrals, rounded corners, no
+ * shadows, 8px grid, Hedvig Letters Sans (bundled, regular weight) + system monospace, calm
+ * `ease` motion. Hierarchy comes from size and colour, not weight.
+ * Every colour in the app comes from this block. Semantic states (destructive, warning,
+ * success) are restrained and are always paired with text or an icon, never colour alone.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #121212;
+  --card: #f7f6f3;
+  --card-foreground: #121212;
+  --popover: #ffffff;
+  --popover-foreground: #121212;
+  --primary: #121212;
+  --primary-foreground: #fafafa;
+  --secondary: #efeeea;
+  --secondary-foreground: #121212;
+  --muted: #efeeea;
+  --muted-foreground: #5c5c5c; /* 6.8:1 on white */
+  --accent: #e7e5e0;
+  --accent-foreground: #121212;
+  --destructive: #b3001b; /* 7.5:1 on white */
+  --destructive-foreground: #ffffff;
+  --warning: #7a4a00; /* 7:1 on white */
+  --success: #146c2e; /* 6.4:1 on white */
+  --border: #e2e0da;
+  --input: #8a8882; /* form control edges need 3:1 */
+  --ring: #121212;
+  --sidebar: #f7f6f3;
+  --sidebar-foreground: #121212;
+  --sidebar-border: #e2e0da;
+  --row-alt: #faf9f7;
+
+  /* Charts: monochrome ramp plus two restrained hues. Series are also told apart by legend text. */
+  --chart-1: #121212;
+  --chart-2: #8a8882;
+  --chart-3: #b3001b;
+  --chart-4: #146c2e;
+  --chart-grid: #e2e0da;
+  --chart-axis: #5c5c5c;
+
+  --radius: 0.5rem;
+  --spacing-unit: 8px;
+  --ease: ease;
+}
+
+.dark {
+  --background: #0d0d0d;
+  --foreground: #fafafa;
+  --card: #121212;
+  --card-foreground: #fafafa;
+  --popover: #121212;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #121212;
+  --secondary: #1c1c1c;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1c1c;
+  --muted-foreground: #a3a3a3; /* 7.9:1 on #0d0d0d */
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #ff7a8a;
+  --destructive-foreground: #121212;
+  --warning: #f0b45a;
+  --success: #6fd08c;
+  --border: #242424;
+  --input: #6b6b6b;
+  --ring: #fafafa;
+  --sidebar: #121212;
+  --sidebar-foreground: #fafafa;
+  --sidebar-border: #242424;
+  --row-alt: #101010;
+
+  --chart-1: #fafafa;
+  --chart-2: #7a7a7a;
+  --chart-3: #ff7a8a;
+  --chart-4: #6fd08c;
+  --chart-grid: #242424;
+  --chart-axis: #a3a3a3;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-row-alt: var(--row-alt);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+
+  /* system-ui and system monospace only: no font files are served */
+  --font-sans: "Hedvig Letters Sans", system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  --font-heading: "Hedvig Letters Sans", system-ui, sans-serif;
+
+  /* rounded scale */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+
+  /* no shadows */
+  --shadow-2xs: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+
+  --ease-default: ease;
+  --default-transition-timing-function: ease;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    font-synthesis: none; /* the bundled face has one weight: never fake bold */
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  /* One-weight face: allow a synthesized bold for inline emphasis only. */
+  strong,
+  b {
+    font-synthesis: weight;
+  }
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+  }
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  /* Display 40, heading 28, body 16, mono 13: one weight, so size carries the hierarchy */
+  .text-display {
+    font-size: 40px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .text-heading {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .text-mono-data {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Visible 2px focus outline with 2px offset. Unlayered so it wins over component utilities. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* A wrapper (rounded box) shows the focus ring for the bare input inside it. */
+.focus-wrapper:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.focus-inner:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat component utilities */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat component utilities */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat component utilities */
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Shimmer status text: a monochrome highlight sweeping across muted text. */
+@keyframes shimmer-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+.shimmer {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--muted-foreground) 35%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 65%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer-sweep 2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    color: var(--muted-foreground);
+    background-image: none;
+    animation: none;
+  }
+}
