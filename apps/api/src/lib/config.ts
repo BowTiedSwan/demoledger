@@ -45,6 +45,10 @@ const envSchema = z.object({
   GUARD_BASE_URL: optStr,
   GUARD_FAIL_MODE: guardFailMode.default('open'),
   GUARD_TIMEOUT_MS: int(2500, 50, 10_000),
+  TRUST_PROXY_HEADERS: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   ASK_RATE_LIMIT_PER_MINUTE: int(10, 1, 600),
 });
 
@@ -82,6 +86,7 @@ export function loadConfig(env: Record<string, string | undefined>): LoadedConfi
       },
       guard: { failMode: e.GUARD_FAIL_MODE, timeoutMs: e.GUARD_TIMEOUT_MS },
       askRateLimitPerMinute: e.ASK_RATE_LIMIT_PER_MINUTE,
+      trustProxyHeaders: e.TRUST_PROXY_HEADERS,
     },
   };
 }

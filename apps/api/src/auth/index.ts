@@ -11,6 +11,8 @@ export interface CreateAuthOptions {
   secret: string;
   baseURL: string;
   trustedOrigins: string[];
+  /** Better Auth's built-in limiter. Default: on in production only (its own default). */
+  rateLimitEnabled?: boolean | undefined;
 }
 
 /**
@@ -30,8 +32,9 @@ export function createAuth(opts: CreateAuthOptions) {
     secret: opts.secret,
     trustedOrigins: opts.trustedOrigins,
     database: drizzleAdapter(db, { provider: 'pg', schema }),
+    ...(opts.rateLimitEnabled === undefined ? {} : { rateLimit: { enabled: opts.rateLimitEnabled } }),
     emailAndPassword: { enabled: true, disableSignUp: true },
-    plugins: [organization({ allowUserToCreateOrganization: false }), bearer()],
+    plugins: [organization({ allowUserToCreateOrganization: false }), bearer({ requireSignature: true })],
     databaseHooks: {
       session: {
         create: {

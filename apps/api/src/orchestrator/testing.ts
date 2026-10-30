@@ -178,6 +178,7 @@ export function makeArgs(over: {
       llm: { requestTimeoutMs: 5000, stepTimeoutMs: 4000, maxRetries: 2, maxSteps: 5, ...llmCfg },
       guard: { failMode: 'open', timeoutMs: 1500, ...guardCfg },
       askRateLimitPerMinute: 10,
+      trustProxyHeaders: false,
     },
     db: {} as AppDeps['db'],
     auth: {} as AppDeps['auth'],

@@ -47,3 +47,16 @@ describe('loadConfig', () => {
     expect(loadConfig({ ...base, LLM_MAX_STEPS: '10', LLM_MAX_RETRIES: '5' }).app.llm.maxSteps).toBe(10);
   });
 });
+
+describe('TRUST_PROXY_HEADERS', () => {
+  const base = {
+    DATABASE_URL_READER: 'postgres://r@localhost/x',
+    DATABASE_URL_APP: 'postgres://a@localhost/x',
+    BETTER_AUTH_SECRET: 'x'.repeat(32),
+  };
+  it('defaults to false and only accepts true/false', () => {
+    expect(loadConfig(base).app.trustProxyHeaders).toBe(false);
+    expect(loadConfig({ ...base, TRUST_PROXY_HEADERS: 'true' }).app.trustProxyHeaders).toBe(true);
+    expect(() => loadConfig({ ...base, TRUST_PROXY_HEADERS: 'yes' })).toThrow(/TRUST_PROXY_HEADERS/);
+  });
+});

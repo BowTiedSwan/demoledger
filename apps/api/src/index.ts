@@ -6,6 +6,7 @@ import { createAiDeps } from './lib/ai-wiring';
 import { loadConfig } from './lib/config';
 import type { AppDeps } from './lib/deps';
 import { createLogger } from './lib/logger';
+import { assertDbRoles } from './lib/role-check';
 
 const { app: config, env } = loadConfig(process.env);
 const logger = createLogger(config.logLevel);
@@ -14,6 +15,8 @@ const poolOpts = { statementTimeoutMs: env.DB_STATEMENT_TIMEOUT_MS };
 const readerPool = createPool(env.DATABASE_URL_READER, { ...poolOpts, applicationName: 'demoledger-reader' });
 const appPool = createPool(env.DATABASE_URL_APP, { ...poolOpts, applicationName: 'demoledger-app' });
 const db = { reader: createDb(readerPool), app: createDb(appPool) };
+
+await assertDbRoles({ reader: readerPool, app: appPool });
 
 const { authLike } = createAuth({
   db: db.app,

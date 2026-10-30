@@ -25,6 +25,43 @@ import { aggregateTransactions, listTransactions } from './repo/transactions';
 
 const ASK_BODY_LIMIT_BYTES = 64 * 1024;
 
+const FORWARDING_HEADERS = [
+  'x-forwarded-for',
+  'x-real-ip',
+  'forwarded',
+  'cf-connecting-ip',
+  'true-client-ip',
+];
+
+/**
+ * Better Auth keys its login throttle on the client IP taken from request headers. Unless the
+ * deployment says an ingress overwrites them (TRUST_PROXY_HEADERS=true), drop every
+ * caller-supplied forwarding header and use the TCP peer address, so a spoofed header cannot
+ * pick a fresh rate-limit bucket.
+ */
+function authRequest(req: Request, env: unknown, trustProxyHeaders: boolean): Request {
+  if (trustProxyHeaders) return req;
+  const headers = new Headers(req.headers);
+  for (const h of FORWARDING_HEADERS) headers.delete(h);
+  const peer = (env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)?.incoming?.socket
+    ?.remoteAddress;
+  if (peer) headers.set('x-forwarded-for', peer.replace(/^::ffff:/, ''));
+  return new Request(req, { headers });
+}
+
+const authBodyLimit = bodyLimit({
+  maxSize: ASK_BODY_LIMIT_BYTES,
+  onError: (c) =>
+    c.json(
+      envelope(
+        (c.var as { requestId?: string }).requestId ?? 'unknown',
+        'payload_too_large',
+        'Request body is too large.',
+      ),
+      413,
+    ),
+});
+
 /** Strip paging/sort/metric fields; the repository filter has no tenant field by construction. */
 function toFilter(q: TransactionFilter): TransactionFilter {
   return {
@@ -62,6 +99,26 @@ export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>()
     .basePath('/api')
     .use(requestId)
+    // Sensitive, per-user responses (incl. error envelopes, Better Auth and the /ask stream) must
+    // never be cached. Applied AFTER the handler so raw Responses (which set their own
+    // Cache-Control, e.g. the AI SDK's `no-cache`) are overridden. The body is passed through
+    // untouched, so streaming is unaffected.
+    .use(async (c, next) => {
+      await next();
+      // Mutate in place: Hono's `c.res = ...` setter copies the OLD headers over the new response.
+      try {
+        c.res.headers.set('Cache-Control', 'no-store');
+        c.res.headers.set('Vary', 'Cookie, Authorization');
+      } catch {
+        // immutable headers (e.g. a fetch() Response): rebuild; the old Cache-Control cannot exist here
+        const headers = new Headers(c.res.headers);
+        headers.delete('Cache-Control');
+        headers.delete('Vary');
+        c.res = new Response(c.res.body, { status: c.res.status, headers });
+        c.res.headers.set('Cache-Control', 'no-store');
+        c.res.headers.set('Vary', 'Cookie, Authorization');
+      }
+    })
     .use(secureHeaders())
     .use(requestLogger(deps.logger))
     .use('/me', tenantGuard)
@@ -70,7 +127,10 @@ export function createApp(deps: AppDeps) {
     .use('/ask', tenantGuard, csrfOrigin(deps.config.trustedOrigins), askLimiter)
     // The UI and seed use only sign-in/sign-out/get-session; org management is not exposed.
     .all('/auth/organization/*', (c) => fail(c, 404, 'not_found', 'Not found.'))
-    .on(['GET', 'POST'], '/auth/*', (c) => deps.auth.handler(c.req.raw))
+    .use('/auth/*', authBodyLimit)
+    .on(['GET', 'POST'], '/auth/*', (c) =>
+      deps.auth.handler(authRequest(c.req.raw, c.env, deps.config.trustProxyHeaders ?? false)),
+    )
     .get('/health', async (c) => {
       const [reader, appDb] = await Promise.all([ping(deps.db.reader), ping(deps.db.app)]);
       const ok = reader === 'ok' && appDb === 'ok';

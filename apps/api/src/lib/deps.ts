@@ -48,6 +48,8 @@ export interface AppConfig {
   };
   guard: { failMode: GuardFailMode; timeoutMs: number };
   askRateLimitPerMinute: number;
+  /** Trust client-supplied X-Forwarded-For & co. Only behind an ingress that overwrites them. */
+  trustProxyHeaders?: boolean | undefined;
 }
 
 /** Result of resolving a cookie or `Authorization: Bearer` session. */

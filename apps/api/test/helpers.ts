@@ -37,7 +37,11 @@ export const noopGuard: Guard = {
   }),
 };
 
-export function makeContext(overrides: Partial<AppConfig> = {}, now: () => Date = () => TEST_NOW) {
+export function makeContext(
+  overrides: Partial<AppConfig> = {},
+  now: () => Date = () => TEST_NOW,
+  opts: { authRateLimit?: boolean } = {},
+) {
   const { app: config, env } = loadConfig(process.env);
   const readerPool = createPool(env.DATABASE_URL_READER, { applicationName: 'test-reader' });
   const appPool = createPool(env.DATABASE_URL_APP, { applicationName: 'test-app' });
@@ -47,6 +51,7 @@ export function makeContext(overrides: Partial<AppConfig> = {}, now: () => Date 
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     trustedOrigins: config.trustedOrigins,
+    rateLimitEnabled: opts.authRateLimit,
   });
   const deps: AppDeps = {
     config: { ...config, ...overrides },
