@@ -1,0 +1,27 @@
+name: demoledger
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-demoledger_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demoledger_owner_dev_pw}
+      POSTGRES_DB: demoledger
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d demoledger && psql -U $${POSTGRES_USER} -d demoledger_test -c 'select 1' >/dev/null",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  pgdata:
