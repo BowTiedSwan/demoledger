@@ -1,0 +1,25 @@
+{
+  "name": "@demoledger/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=../../.env src/seed/run.ts",
+    "db:reset": "tsx --env-file-if-exists=../../.env src/reset.ts"
+  },
+  "dependencies": {
+    "@demoledger/shared": "workspace:*",
+    "better-auth": "1.7.14",
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11"
+  }
+}
