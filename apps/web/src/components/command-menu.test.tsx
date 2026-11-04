@@ -2,7 +2,11 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { SuggestedQuestionsProvider } from '@/lib/suggested-questions';
+import { listWalletIds } from '@/lib/transactions-api';
 import { CommandMenu } from './command-menu';
+
+vi.mock('@/lib/transactions-api', () => ({ listWalletIds: vi.fn() }));
 
 const navigate = vi.fn();
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigate }));
@@ -31,6 +35,19 @@ const props = (over: Partial<Parameters<typeof CommandMenu>[0]> = {}) => ({
 });
 
 describe('CommandMenu (regression F-28: cmdk store context)', () => {
+  it('prefills a Beta wallet suggestion rather than the Alpha assignment template', async () => {
+    vi.mocked(listWalletIds).mockResolvedValue(['WALLET-B-001', 'WALLET-B-002']);
+    const user = userEvent.setup();
+    render(
+      <SuggestedQuestionsProvider>
+        <CommandMenu {...props()} />
+      </SuggestedQuestionsProvider>,
+    );
+    const question = 'Why did wallet WALLET-B-001 have failed transactions?';
+    await user.click(await screen.findByText(question));
+    expect(navigate).toHaveBeenCalledWith({ to: '/assistant', search: { q: question } });
+  });
+
   it('opens without throwing, accepts typing and selects an item', async () => {
     const user = userEvent.setup();
     const p = props();

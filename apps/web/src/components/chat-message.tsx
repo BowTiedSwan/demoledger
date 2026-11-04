@@ -1,3 +1,4 @@
+import { WALLET_NOT_FOUND_MESSAGE, WALLET_NOT_FOUND_TITLE } from '@demoledger/shared';
 import { Link } from '@tanstack/react-router';
 import { CircleAlertIcon, ShieldAlertIcon, TriangleAlertIcon } from 'lucide-react';
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
@@ -12,6 +13,7 @@ import { VisualBlock } from '@/components/visual/visual-block';
 import {
   type ChatMessage,
   messageNotices,
+  missingWalletIds,
   sourceLinks,
   toolNameOfPart,
   toolTitle,
@@ -89,6 +91,7 @@ export function ChatMessageView({
 
   const notices = messageNotices(message.parts);
   const sources = sourceLinks(message.parts);
+  const missingWallets = missingWalletIds(message.parts);
   const lastIndex = message.parts.length - 1;
 
   return (
@@ -130,6 +133,19 @@ export function ChatMessageView({
           }
           return null;
         })}
+
+        {missingWallets.map((walletId) => (
+          <Alert key={walletId} role="status" className="w-full">
+            <CircleAlertIcon aria-hidden />
+            <AlertTitle>{WALLET_NOT_FOUND_TITLE}</AlertTitle>
+            <AlertDescription>
+              <span className="font-mono">{walletId}</span> <span>{WALLET_NOT_FOUND_MESSAGE}</span>{' '}
+              <Link to="/transactions" search={{}} className="underline underline-offset-4">
+                View your transactions
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ))}
 
         {notices.guard ? (
           <Alert role="status" className="w-full">

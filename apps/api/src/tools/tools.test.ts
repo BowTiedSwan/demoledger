@@ -1,5 +1,5 @@
 import type { TOOL_NAMES } from '@demoledger/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fakeReader, txn } from '../orchestrator/testing';
 import { ledgerTools, ToolCallRecorder, wrapUntrusted } from './index';
 
@@ -59,6 +59,29 @@ const INVALID: [string, string, unknown][] = [
 ];
 
 describe('invalid tool arguments (R27)', () => {
+  it('does not report wallet absence when the unfiltered presence lookup fails', async () => {
+    const { reader, recorder, exec } = setup([]);
+    vi.spyOn(reader, 'aggregate').mockRejectedValue(new Error('unavailable'));
+    const result = await exec('search_transactions', { wallet_id: 'WALLET-B-001', status: 'failed' });
+    expect(result).toMatchObject({ ok: false, error: { code: 'tool_error' } });
+    expect(result).not.toHaveProperty('wallet_lookup');
+    expect(reader.aggregate).toHaveBeenCalledWith(
+      'tenant_alpha',
+      { wallet_id: 'WALLET-B-001', metric: 'count', group_by: 'none' },
+      expect.any(Date),
+    );
+    expect(recorder.missingWallets.size).toBe(0);
+    expect(recorder.calls[0]?.validationError).toBe('query_failed');
+  });
+
+  it('uses a matching result as proof of wallet presence without an extra query', async () => {
+    const { reader, exec } = setup();
+    expect(await exec('search_transactions', { wallet_id: 'WALLET-A-001' })).toMatchObject({
+      wallet_lookup: { wallet_id: 'WALLET-A-001', found: true },
+    });
+    expect(reader.aggregateCalls).toHaveLength(0);
+  });
+
   it.each(INVALID)(
     '%s -> structured error, validated=false audit row, no query',
     async (_label, name, input) => {

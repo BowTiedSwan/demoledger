@@ -9,6 +9,6 @@ Vite + React 19 SPA, TanStack Router, shadcn (radix-nova), Tailwind v4, AI SDK `
 - Model output is untrusted. `MessageResponse` keeps `allowedImagePrefixes: []` and same-origin-only links, and `csp.ts` keeps `img-src 'self' data:; connect-src 'self'`. `message.test.tsx` and `csp.test.ts` guard both; do not loosen them.
 - Visual answers render only `data-visual` parts that validate against the shared `visualSpec`, through the fixed catalog in `src/components/visual/` (BarChart, LineChart, Table, Stat). Never add actions, state bindings or components that execute model-authored content.
 - Show error and warning copy from the shared constants through `src/lib/ask-errors.ts`; never render raw provider or server text.
-- The first four suggested questions in `src/lib/chat-parts.ts` are verbatim from the assignment; keep them unchanged. The fifth (the chart prompt) is ours.
+- The first four suggested-question templates in `src/lib/chat-parts.ts` are verbatim from the assignment; keep the templates unchanged. Runtime suggestions substitute wallet IDs from the signed-in organization's ledger (T-296); omit wallet-specific suggestions until that lookup succeeds. The fifth (the chart prompt) is ours.
 - cmdk primitives must render inside a `<Command>` root (`CommandDialog` provides it; F-28, covered by `command-menu.test.tsx`).
 - Format amounts from integer minor units (`src/lib/format.ts`). Failed rows without a reason show "Not recorded".

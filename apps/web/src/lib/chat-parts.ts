@@ -1,5 +1,5 @@
 import type { AskDataParts, AskMessageMetadata, AskUITools, ToolName } from '@demoledger/shared';
-import { TOOL_NAMES } from '@demoledger/shared';
+import { TOOL_NAMES, walletLookup } from '@demoledger/shared';
 import type { ChatStatus, UIMessage } from 'ai';
 import { type DisplayedError, describeAskError } from './ask-errors';
 
@@ -20,6 +20,40 @@ export const SUGGESTED_QUESTIONS = [
   'Summarize recent activity for WALLET-A-002.',
   'Show me a graph of outgoing transactions for the past week.',
 ] as const;
+
+/** Assignment templates, bound only to wallets returned by the tenant-scoped API. */
+export function suggestedQuestions(walletIds: readonly string[]): string[] {
+  const wallets = [...new Set(walletIds)].sort();
+  const replacements = new Map([
+    ['WALLET-A-001', wallets.includes('WALLET-A-001') ? 'WALLET-A-001' : wallets[0]],
+    ['WALLET-A-002', wallets.includes('WALLET-A-002') ? 'WALLET-A-002' : (wallets[1] ?? wallets[0])],
+  ]);
+  return SUGGESTED_QUESTIONS.flatMap((question) => {
+    for (const [template, wallet] of replacements) {
+      if (question.includes(template)) return wallet ? [question.replace(template, wallet)] : [];
+    }
+    return [question];
+  });
+}
+
+/** A server-confirmed absence is shown even if the model's prose omits it. */
+export function missingWalletIds(
+  parts: readonly { type: string; state?: string; output?: unknown }[],
+): string[] {
+  const latest = new Map<string, boolean>();
+  for (const part of parts) {
+    if (
+      (part.type !== 'tool-search_transactions' && part.type !== 'tool-aggregate_transactions') ||
+      part.state !== 'output-available'
+    )
+      continue;
+    const output = part.output as { ok?: boolean; wallet_lookup?: unknown } | undefined;
+    if (output?.ok !== true) continue;
+    const lookup = walletLookup.safeParse(output.wallet_lookup);
+    if (lookup.success) latest.set(lookup.data.wallet_id, lookup.data.found);
+  }
+  return [...latest].filter(([, found]) => !found).map(([id]) => id);
+}
 
 /** Friendly tool titles: running (progressive) and finished. */
 export const TOOL_TITLES: Record<ToolName, { running: string; done: string }> = {

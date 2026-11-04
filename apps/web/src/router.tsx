@@ -9,6 +9,7 @@ import {
 import { AppShell } from '@/components/app-shell';
 import { assistantSearch, transactionsSearch } from '@/lib/search-schemas';
 import { fetchSession } from '@/lib/session';
+import { SuggestedQuestionsProvider } from '@/lib/suggested-questions';
 import { LoginPage } from '@/routes/login';
 import { NoOrganizationPage } from '@/routes/no-organization';
 import { TransactionsPage } from '@/routes/transactions';
@@ -54,7 +55,11 @@ const appRoute = createRoute({
   },
   component: function AppLayout() {
     const { me } = appRoute.useRouteContext();
-    return <AppShell me={me} />;
+    return (
+      <SuggestedQuestionsProvider key={`${me.organization.id}:${me.user.id}`}>
+        <AppShell me={me} />
+      </SuggestedQuestionsProvider>
+    );
   },
 });
 

@@ -1,4 +1,5 @@
 import {
+  aggregateResponse,
   type Direction,
   PERIODS,
   type Period,
@@ -10,6 +11,13 @@ import {
 import { api } from './api';
 
 export const PAGE_SIZE = 10;
+
+/** All wallets with ledger records, never inferred from a tenant name or a seed prefix. */
+export async function listWalletIds(): Promise<string[]> {
+  const res = await api.transactions.aggregate.$get({ query: { metric: 'count', group_by: 'wallet' } });
+  if (!res.ok) throw new Error('Could not load wallet suggestions.');
+  return aggregateResponse.parse(await res.json()).groups.map((group) => group.key);
+}
 
 export interface TransactionFilters {
   id?: string | undefined;

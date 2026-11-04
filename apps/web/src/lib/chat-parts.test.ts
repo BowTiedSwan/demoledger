@@ -4,12 +4,14 @@ import {
   hasVisibleContent,
   isWaitingForFirstToken,
   messageNotices,
+  missingWalletIds,
   PENDING_ANALYSING,
   pendingStepLabel,
   progressIndicator,
   runningToolLabel,
   SUGGESTED_QUESTIONS,
   sourceLinks,
+  suggestedQuestions,
   summarizeToolOutput,
   toolNameOfPart,
   toolTitle,
@@ -18,6 +20,20 @@ import {
 } from './chat-parts';
 
 describe('suggested questions', () => {
+  it('uses only returned wallets for Beta, with no Alpha template IDs', () => {
+    const questions = suggestedQuestions(['WALLET-B-002', 'WALLET-B-001']);
+    expect(questions[0]).toBe('Why did wallet WALLET-B-001 have failed transactions?');
+    expect(questions[3]).toBe('Summarize recent activity for WALLET-B-002.');
+    expect(questions.join(' ')).not.toContain('WALLET-A-');
+    expect(suggestedQuestions(['WALLET-A-002', 'WALLET-A-001'])).toEqual(SUGGESTED_QUESTIONS);
+  });
+
+  it('omits wallet-specific questions without verified wallets and supports a single wallet', () => {
+    expect(suggestedQuestions([])).toHaveLength(3);
+    expect(suggestedQuestions([]).join(' ')).not.toContain('WALLET-');
+    expect(suggestedQuestions(['WALLET-B-003'])[3]).toBe('Summarize recent activity for WALLET-B-003.');
+  });
+
   it('are verbatim from the brief', () => {
     expect(SUGGESTED_QUESTIONS).toEqual([
       'Why did wallet WALLET-A-001 have failed transactions?',
@@ -26,6 +42,22 @@ describe('suggested questions', () => {
       'Summarize recent activity for WALLET-A-002.',
       'Show me a graph of outgoing transactions for the past week.',
     ]);
+  });
+});
+
+describe('wallet-not-found notices', () => {
+  it('uses completed server lookups, deduplicates wallets and distinguishes zero matches from absence', () => {
+    const result = (found: boolean) => ({
+      type: 'tool-aggregate_transactions',
+      state: 'output-available',
+      output: { ok: true, total_matching: 0, wallet_lookup: { wallet_id: 'WALLET-A-001', found } },
+    });
+    expect(missingWalletIds([result(false), result(false)])).toEqual(['WALLET-A-001']);
+    expect(missingWalletIds([result(true)])).toEqual([]);
+    expect(missingWalletIds([result(false), result(true)])).toEqual([]);
+    expect(missingWalletIds([{ ...result(false), state: 'input-available' }])).toEqual([]);
+    expect(missingWalletIds([{ type: 'text', output: result(false).output }])).toEqual([]);
+    expect(missingWalletIds([{ ...result(false), output: { ok: false } }])).toEqual([]);
   });
 });
 

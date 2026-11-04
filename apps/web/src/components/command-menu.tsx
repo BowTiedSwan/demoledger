@@ -11,7 +11,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { requestPromptFocus, resetChat } from '@/lib/chat';
-import { SUGGESTED_QUESTIONS } from '@/lib/chat-parts';
+import { useSuggestedQuestions } from '@/lib/suggested-questions';
 
 /** Cmd/Ctrl+K menu: navigation, suggested questions, theme, sign out. */
 export function CommandMenu({
@@ -26,6 +26,7 @@ export function CommandMenu({
   onSignOut: () => void;
 }) {
   const navigate = useNavigate();
+  const questions = useSuggestedQuestions();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -75,7 +76,7 @@ export function CommandMenu({
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Ask the assistant">
-          {SUGGESTED_QUESTIONS.map((q) => (
+          {questions.map((q) => (
             <CommandItem key={q} onSelect={run(() => navigate({ to: '/assistant', search: { q } }))}>
               <SearchIcon aria-hidden /> {q}
             </CommandItem>

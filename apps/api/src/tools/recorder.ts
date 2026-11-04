@@ -18,6 +18,8 @@ export class ToolCallRecorder {
   readonly rowFacts = new Map<string, { status: string; failure_reason: string | null }>();
   /** Human-readable server counts per lookup, for the count warning ("18 matching (search_transactions: status=failed)"). */
   readonly countNotes: string[] = [];
+  /** Wallets checked without other filters and absent from this tenant's ledger. */
+  readonly missingWallets = new Set<string>();
   /** Status/direction values some lookup filtered or grouped by (so a count of them is verifiable). */
   readonly countedQualifiers = new Set<string>();
   /** Latest successful aggregate / search results of this request (source for present_visual). */

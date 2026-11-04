@@ -56,7 +56,8 @@
 ## apps/web: renders contracts, never redefines them
 
 - `src/lib/api.ts`: Typed `hc<AppType>` client; every payload type comes from `@demoledger/shared`.
-- `src/lib/chat-parts.ts`: Suggested questions (four from the brief verbatim, plus the chart prompt).
+- `src/lib/chat-parts.ts`: Assignment question templates, tenant-wallet substitutions and chat-part helpers.
+- `src/lib/suggested-questions.tsx`: One tenant-scoped wallet lookup shared by assistant and command-menu suggestions.
 - `src/components/ai-elements/message.tsx`: Hardened markdown: no remote images, same-origin links only.
 - `src/components/visual/registry.tsx`: Fixed catalog renderer for validated `data-visual` specs.
 - `csp.ts`: Content Security Policy (`img-src 'self' data:; connect-src 'self'`).
@@ -112,4 +113,4 @@ Every request: `requestId` → `no-store` → `secureHeaders` → `requestLogger
 
 ## Counts
 
-40 test files · 10 ADRs · 2 migrations · 43 guard eval prompts · 19 model eval questions · 3 diagrams
+42 test files · 10 ADRs · 2 migrations · 43 guard eval prompts · 19 model eval questions · 3 diagrams

@@ -20,7 +20,8 @@ import {
   useChatInstance,
   useStatusLabel,
 } from '@/lib/chat';
-import { type ChatMessage, progressIndicator, runningToolLabel, SUGGESTED_QUESTIONS } from '@/lib/chat-parts';
+import { type ChatMessage, progressIndicator, runningToolLabel } from '@/lib/chat-parts';
+import { useSuggestedQuestions } from '@/lib/suggested-questions';
 
 export function AssistantPage() {
   const chat = useChatInstance();
@@ -148,6 +149,7 @@ export function AssistantPage() {
 }
 
 function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
+  const questions = useSuggestedQuestions();
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-8">
       <div className="flex flex-col gap-2">
@@ -162,7 +164,7 @@ function EmptyState({ onSelect }: { onSelect: (q: string) => void }) {
           Suggested questions
         </h3>
         <Suggestions>
-          {SUGGESTED_QUESTIONS.map((q) => (
+          {questions.map((q) => (
             <Suggestion key={q} suggestion={q} onPick={onSelect} />
           ))}
         </Suggestions>

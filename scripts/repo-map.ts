@@ -162,7 +162,11 @@ const MODULES: ReadonlyArray<{ title: string; lines: ReadonlyArray<[path: string
       ],
       [
         'apps/web/src/lib/chat-parts.ts',
-        'Suggested questions (four from the brief verbatim, plus the chart prompt).',
+        'Assignment question templates, tenant-wallet substitutions and chat-part helpers.',
+      ],
+      [
+        'apps/web/src/lib/suggested-questions.tsx',
+        'One tenant-scoped wallet lookup shared by assistant and command-menu suggestions.',
       ],
       [
         'apps/web/src/components/ai-elements/message.tsx',

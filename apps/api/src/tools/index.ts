@@ -11,6 +11,7 @@ import {
   transactionSourceUrl,
   type ValidationIssue,
   type VisualDataPart,
+  type WalletLookup,
 } from '@demoledger/shared';
 import { jsonSchema, tool } from 'ai';
 import { z } from 'zod';
@@ -90,6 +91,26 @@ export function ledgerTools(opts: LedgerToolsOptions) {
   const { tenantId, reader, recorder, writer } = opts;
   const nonce = crypto.randomUUID().slice(0, 8);
 
+  const lookupWallet = async (
+    walletId: string | undefined,
+    total: number,
+  ): Promise<WalletLookup | undefined> => {
+    if (!walletId) return undefined;
+    // A matching row proves presence. Otherwise drop ALL other filters, keeping the closure tenant.
+    const found =
+      total > 0 ||
+      (
+        await reader.aggregate(
+          tenantId,
+          { wallet_id: walletId, metric: 'count', group_by: 'none' },
+          opts.now(),
+        )
+      ).total_matching > 0;
+    if (found) recorder.missingWallets.delete(walletId);
+    else recorder.missingWallets.add(walletId);
+    return { wallet_id: walletId, found };
+  };
+
   const emitSources = (ids: readonly string[]) => {
     for (const id of ids) {
       if (recorder.returnedIds.has(id)) continue;
@@ -123,6 +144,7 @@ export function ledgerTools(opts: LedgerToolsOptions) {
       }
       try {
         const res = await reader.search(tenantId, parsed.data, opts.now());
+        const walletLookup = await lookupWallet(parsed.data.wallet_id, res.total_matching);
         const ids = res.rows.map((r) => r.transaction_id);
         emitSources(ids);
         for (const r of res.rows) {
@@ -145,7 +167,7 @@ export function ledgerTools(opts: LedgerToolsOptions) {
           returnedIds: ids,
           latencyMs: Math.round(performance.now() - t0),
         });
-        return { ok: true, ...res };
+        return { ok: true, ...res, ...(walletLookup ? { wallet_lookup: walletLookup } : {}) };
       } catch {
         recorder.add({
           toolName: 'search_transactions',
@@ -190,6 +212,7 @@ export function ledgerTools(opts: LedgerToolsOptions) {
       }
       try {
         const res = await reader.aggregate(tenantId, parsed.data, opts.now());
+        const walletLookup = await lookupWallet(parsed.data.wallet_id, res.total_matching);
         recorder.successfulCalls++;
         recorder.latestAggregate = res;
         recorder.countFacts.add(res.total_matching);
@@ -214,7 +237,7 @@ export function ledgerTools(opts: LedgerToolsOptions) {
           returnedIds: [],
           latencyMs: Math.round(performance.now() - t0),
         });
-        return { ok: true, ...res };
+        return { ok: true, ...res, ...(walletLookup ? { wallet_lookup: walletLookup } : {}) };
       } catch {
         recorder.add({
           toolName: 'aggregate_transactions',
@@ -338,6 +361,8 @@ function serverFacts(output: unknown): string {
   if (typeof o.total_matching === 'number') parts.push(`total_matching=${o.total_matching}`);
   if (typeof o.truncated === 'boolean') parts.push(`truncated=${o.truncated}`);
   if (Array.isArray(o.groups)) parts.push(`groups=${o.groups.length}`);
+  const lookup = o.wallet_lookup as WalletLookup | undefined;
+  if (lookup) parts.push(`wallet_found=${lookup.found}`);
   return parts.join(' ');
 }
 

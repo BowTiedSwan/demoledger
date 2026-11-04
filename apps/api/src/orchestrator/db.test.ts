@@ -41,6 +41,44 @@ const auditRows = async (requestId: string) => ({
 });
 
 describe('AI tools against the real database', () => {
+  it.each(['search_transactions', 'aggregate_transactions'] as const)(
+    '%s distinguishes foreign/missing wallets from an empty filtered result for Beta',
+    async (name) => {
+      for (const [walletId, found] of [
+        ['WALLET-A-001', false],
+        ['WALLET-B-999', false],
+        ['WALLET-B-001', true],
+      ] as const) {
+        const input = {
+          wallet_id: walletId,
+          status: 'failed',
+          from: '2030-01-01',
+          to: '2030-01-01',
+          ...(name === 'aggregate_transactions' ? { metric: 'count', group_by: 'failure_reason' } : {}),
+        };
+        const { model, calls: modelCalls } = scriptedModel([
+          { tools: [{ name, input }] },
+          { text: 'Check the wallet and filters.' },
+        ]);
+        const requestId = `wallet-check-${name}-${walletId}`;
+        const s = await readStream(await handleAsk(dbArgs({ model, tenantId: 'tenant_beta' }, requestId)));
+        const result = s.chunks.find((c) => c.type === 'tool-output-available')?.output;
+        expect(result).toMatchObject({
+          ok: true,
+          total_matching: 0,
+          wallet_lookup: { wallet_id: walletId, found },
+        });
+        expect(s.sources).toEqual([]);
+        expect(JSON.stringify(modelCalls[1]?.prompt)).toContain(`wallet_found=${found}`);
+        const { req, calls } = await auditRows(requestId);
+        expect(req[0]).toMatchObject({ status: 'no_results', tenant_id: 'tenant_beta' });
+        expect(req[0].error_detail).toBe(found ? null : `wallet_not_found:${walletId}`);
+        expect(calls).toHaveLength(1);
+        expect(calls[0]).toMatchObject({ validated: true, raw_args: input, returned_ids: [] });
+      }
+    },
+  );
+
   it('alpha tool calls only ever return alpha rows, and the audit rows land in Postgres', async () => {
     const { model } = scriptedModel([
       { tools: [{ name: 'search_transactions', input: { status: 'failed', limit: 50 } }] },

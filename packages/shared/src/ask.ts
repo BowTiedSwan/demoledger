@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { guardVerdict, toolName } from './enums';
 import { validationIssue } from './errors';
-import { transactionId } from './ids';
+import { transactionId, walletId } from './ids';
 import { aggregateResponse, appliedRange, transactionDTO } from './transactions';
 import { type PresentVisualResult, visualDataPart } from './visual';
 
@@ -203,6 +203,13 @@ export const toolErrorResult = z.object({
 });
 export type ToolErrorResult = z.infer<typeof toolErrorResult>;
 
+/** Presence in this tenant's ledger, checked without the query's other filters. */
+export const walletLookup = z.strictObject({ wallet_id: walletId, found: z.boolean() });
+export type WalletLookup = z.infer<typeof walletLookup>;
+export const WALLET_NOT_FOUND_TITLE = "Wallet not found in your organization's ledger";
+export const WALLET_NOT_FOUND_MESSAGE =
+  'No ledger records exist for this wallet in your organization. Check the wallet ID in Transactions and try again.';
+
 export const searchTransactionsResult = z.object({
   ok: z.literal(true),
   rows: z.array(transactionDTO),
@@ -210,10 +217,14 @@ export const searchTransactionsResult = z.object({
   total_matching: z.number().int().nonnegative(),
   truncated: z.boolean(),
   applied_range: appliedRange,
+  wallet_lookup: walletLookup.optional(),
 });
 export type SearchTransactionsResult = z.infer<typeof searchTransactionsResult>;
 
-export const aggregateTransactionsResult = aggregateResponse.extend({ ok: z.literal(true) });
+export const aggregateTransactionsResult = aggregateResponse.extend({
+  ok: z.literal(true),
+  wallet_lookup: walletLookup.optional(),
+});
 export type AggregateTransactionsResult = z.infer<typeof aggregateTransactionsResult>;
 
 /**

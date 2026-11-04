@@ -37,7 +37,7 @@ describe('mocked AI tool-call workflows (brief 9)', () => {
     expect(s.dataParts.find((p) => p.type === 'data-ungrounded')).toBeUndefined();
     // The model saw the tool result wrapped as untrusted data (on the role:'tool' message itself).
     expect(toolMessageText(calls[1]?.prompt)).toMatch(
-      /^\[server facts\] returned=2 total_matching=2 truncated=false\n<untrusted_tool_data tool="search_transactions"/,
+      /^\[server facts\] returned=2 total_matching=2 truncated=false wallet_found=true\n<untrusted_tool_data tool="search_transactions"/,
     );
 
     expect(audit.requests).toHaveLength(1);

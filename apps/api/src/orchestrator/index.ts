@@ -545,6 +545,7 @@ async function runAsk(
     answerText = text;
     const noResults = recorder.successfulCalls > 0 && !recorder.matchedRows;
     const mismatchDetail = [
+      recorder.missingWallets.size > 0 ? `wallet_not_found:${[...recorder.missingWallets].join(',')}` : '',
       badCounts.length > 0 ? `count_mismatch:${badCounts.join(',')}` : '',
       badFacts.length > 0 ? `fact_mismatch:${badFacts.join(',')}` : '',
       speculation.length > 0 ? `speculation:${speculation.join(',')}` : '',
